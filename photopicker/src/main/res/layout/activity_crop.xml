@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+
+    <LinearLayout
+        android:layout_alignParentBottom="true"
+        android:id="@+id/bottom_container"
+        android:layout_width="match_parent"
+        android:layout_height="48dp">
+        <Button
+            android:id="@+id/rotate"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="旋转"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/crop"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="裁剪"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+    
+    <com.yalantis.ucrop.view.UCropView
+        android:layout_above="@id/bottom_container"
+        android:id="@+id/ucropView"
+        android:background="@android:color/black"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    
+    
+
+</RelativeLayout>
