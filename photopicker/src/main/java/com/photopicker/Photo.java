@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.ColorInt;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
@@ -33,7 +34,42 @@ public class Photo {
 
     public static class ListOption{
 
+        public static final String EXTRA_CROP_OPTION_BUNDLE = "extra_crop_option_bundle";
 
+
+        private Intent mListIntent;
+        private Bundle mListBundle;
+
+        public ListOption(){
+            mListIntent = new Intent();
+            mListBundle = new Bundle();
+        }
+
+        public ListOption withCropOption(CropOption cropOption){
+            Bundle bound = cropOption.getBound();
+            mListBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,bound);
+            return this;
+        }
+
+
+
+        public void start(Activity activity, int requestCode){
+            activity.startActivityForResult(getIntent(activity),requestCode);
+        }
+
+        public void start(Fragment fragment, int requestCode){
+            fragment.startActivityForResult(getIntent(fragment.getContext()),requestCode);
+        }
+
+        public void start(Context context){
+            context.startActivity(getIntent(context));
+        }
+
+        private Intent getIntent(Context context) {
+            mListIntent.setClass(context,PhotoListActivity.class);
+            mListIntent.putExtras(mListBundle);
+            return mListIntent;
+        }
     }
 
     public static class BigImgOptin{
@@ -62,12 +98,18 @@ public class Photo {
         public static final String EXTRA_CROP_FRAME_COLOR = "extra_dimmed_color";
 
 
-        private Intent mIntent;
+        private Intent mCropIntent;
+        private Bundle mCropBundle;
 
         public CropOption(@NonNull Uri inputUri, @NonNull Uri outputUri){
-            mIntent = new Intent();
-            mIntent.putExtra(EXTRA_INPUT_URI,inputUri);
-            mIntent.putExtra(EXTRA_OUTPUT_URI,outputUri);
+            mCropIntent = new Intent();
+            mCropBundle = new Bundle();
+            mCropBundle.putParcelable(EXTRA_INPUT_URI,inputUri);
+            mCropBundle.putParcelable(EXTRA_OUTPUT_URI,outputUri);
+        }
+
+        public Bundle getBound(){
+            return mCropBundle;
         }
 
         /**
@@ -76,7 +118,7 @@ public class Photo {
          * @return
          */
         public CropOption setCropFrameColor(@ColorInt int color){
-            mIntent.putExtra(EXTRA_CROP_FRAME_COLOR,color);
+            mCropBundle.putInt(EXTRA_CROP_FRAME_COLOR,color);
             return this;
         }
 
@@ -86,7 +128,7 @@ public class Photo {
          * @return
          */
         public CropOption setCircleDimmedLayer(boolean circleDimmedLayer){
-            mIntent.putExtra(EXTRA_CIRCLE_DIMMED_LAYER,circleDimmedLayer);
+            mCropBundle.putBoolean(EXTRA_CIRCLE_DIMMED_LAYER,circleDimmedLayer);
             return this;
         }
 
@@ -96,7 +138,7 @@ public class Photo {
          * @return
          */
         public CropOption setFreestyleCropEnabled(boolean freestyleCropEnabled){
-            mIntent.putExtra(EXTRA_FREESTYLE_ENABLED,freestyleCropEnabled);
+            mCropBundle.putBoolean(EXTRA_FREESTYLE_ENABLED,freestyleCropEnabled);
             return this;
         }
 
@@ -106,7 +148,7 @@ public class Photo {
          * @return
          */
         public CropOption setShowCropGrid(boolean isShow){
-            mIntent.putExtra(EXTRA_SHOW_CROP_GRID,isShow);
+            mCropBundle.putBoolean(EXTRA_SHOW_CROP_GRID,isShow);
             return this;
         }
 
@@ -116,7 +158,7 @@ public class Photo {
          * @return
          */
         public CropOption setRotateEnabled(boolean enabled){
-            mIntent.putExtra(EXTRA_ROTATE_ENABLED,enabled);
+            mCropBundle.putBoolean(EXTRA_ROTATE_ENABLED,enabled);
             return this;
         }
 
@@ -126,7 +168,7 @@ public class Photo {
          * @return
          */
         public CropOption setScaleEnabled(boolean enabled){
-            mIntent.putExtra(EXTRA_SCALE_ENABLED,enabled);
+            mCropBundle.putBoolean(EXTRA_SCALE_ENABLED,enabled);
             return this;
         }
 
@@ -136,7 +178,7 @@ public class Photo {
          * @return
          */
         public CropOption setCompressionFormat(@NonNull Bitmap.CompressFormat format) {
-            mIntent.putExtra(EXTRA_COMPRESSION_FORMAT_NAME, format.name());
+            mCropBundle.putString(EXTRA_COMPRESSION_FORMAT_NAME, format.name());
             return this;
         }
 
@@ -146,7 +188,7 @@ public class Photo {
          * @return
          */
         public CropOption setCompressionQuality(@IntRange(from = 0) int compressQuality) {
-            mIntent.putExtra(EXTRA_COMPRESSION_QUALITY, compressQuality);
+            mCropBundle.putInt(EXTRA_COMPRESSION_QUALITY, compressQuality);
             return this;
         }
 
@@ -157,8 +199,8 @@ public class Photo {
          * @return
          */
         public CropOption setAspectRatio(float x, float y) {
-            mIntent.putExtra(EXTRA_ASPECT_RATIO_X, x);
-            mIntent.putExtra(EXTRA_ASPECT_RATIO_Y, y);
+            mCropBundle.putFloat(EXTRA_ASPECT_RATIO_X, x);
+            mCropBundle.putFloat(EXTRA_ASPECT_RATIO_Y, y);
             return this;
         }
 
@@ -195,8 +237,9 @@ public class Photo {
         }
 
         private Intent getIntent(Context context) {
-            mIntent.setClass(context,CropActivity.class);
-            return mIntent;
+            mCropIntent.setClass(context,CropActivity.class);
+            mCropIntent.putExtras(mCropBundle);
+            return mCropIntent;
         }
     }
 }
