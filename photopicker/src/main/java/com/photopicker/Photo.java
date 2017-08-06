@@ -6,10 +6,14 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.ColorInt;
+import android.support.annotation.IntDef;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+
+import java.util.ArrayList;
 
 
 /**
@@ -27,15 +31,31 @@ public class Photo {
         return new ListOption();
     }
 
-    public static BigImgOptin createBigImgOptin(){
-        return new BigImgOptin();
+    public static BigImgOptin createBigImgOptin(@NonNull ArrayList<String> imgPath){
+        return new BigImgOptin(imgPath);
     }
 
+    @IntDef({CROP_MODE_SQUARE,CROP_MODE_CIRCLE})
+    public @interface CropMode{}
+
+    /**
+     * 方形裁剪
+     */
+    public static final int CROP_MODE_SQUARE = 10;
+
+    /**
+     * 圆形裁剪
+     */
+    public static final int CROP_MODE_CIRCLE = 12;
 
     public static class ListOption{
 
         public static final String EXTRA_CROP_OPTION_BUNDLE = "extra_crop_option_bundle";
-
+        public static final String EXTRA_BIG_IMG_BUNDLE = "extra_big_img_bundle";
+        public static final String EXTRA_MAX_SELECTOR_COUNT = "extra_max_selector_count";
+        public static final String EXTRA_NEED_CROP = "extra_need_crop";
+        public static final String EXTRA_NEED_CAMERA = "extra_need_camera";
+        public static final String EXTRA_CAMERA_URI = "extra_camera_uei";
 
         private Intent mListIntent;
         private Bundle mListBundle;
@@ -45,13 +65,91 @@ public class Photo {
             mListBundle = new Bundle();
         }
 
-        public ListOption withCropOption(CropOption cropOption){
-            Bundle bound = cropOption.getBound();
-            mListBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,bound);
+        /**
+         * 是否需要显示照相机,如果需要照相机的item，请务必调用{@link #setCameraUri(Uri)}设置照相机拍完照保存的相片路径
+         * @return
+         */
+        public ListOption needCamera(boolean needCamera){
+            mListBundle.putBoolean(EXTRA_NEED_CAMERA,needCamera);
             return this;
         }
 
+        /**
+         * 设置相机拍照保存相片的uri
+         * @param saveUri
+         * @return
+         */
+        public ListOption setCameraUri(@NonNull Uri saveUri){
+            mListBundle.putParcelable(EXTRA_CAMERA_URI,saveUri);
+            return this;
+        }
 
+        /**
+         * 是否需要裁剪
+         * @return
+         */
+        public ListOption needCrop(boolean needCrop){
+            mListBundle.putBoolean(EXTRA_NEED_CROP,needCrop);
+            return this;
+        }
+
+        /**
+         * 设置裁剪的模式 {@link #CROP_MODE_CIRCLE},{@link #CROP_MODE_SQUARE}
+         * @param cropMode
+         * @return
+         */
+        public ListOption setCropMode(@CropMode int cropMode){
+            Bundle cropBundle = mListBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
+            if(cropBundle == null){
+                cropBundle = new Bundle();
+            }
+            mListBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
+            return this;
+        }
+
+        /**
+         * 设置最大选择数量
+         * @param maxSelectorCount
+         * @return
+         */
+        public ListOption setMaxSelectorCount(int maxSelectorCount){
+            mListBundle.putInt(EXTRA_MAX_SELECTOR_COUNT,maxSelectorCount);
+            return this;
+        }
+
+        /**
+         * 设置一个大图的option
+         * @param bigImgOption
+         * @return
+         */
+        public ListOption withBigImgOption(@NonNull BigImgOptin bigImgOption){
+            Bundle bigImgBundle = bigImgOption.getBigImgBundle();
+            Bundle bundle = mListBundle.getParcelable(EXTRA_BIG_IMG_BUNDLE);
+            if(bundle == null) {
+                mListBundle.putParcelable(EXTRA_BIG_IMG_BUNDLE, bigImgBundle);
+            }else {
+                bundle.putAll(bigImgBundle);
+                mListBundle.putParcelable(EXTRA_BIG_IMG_BUNDLE, bundle);
+            }
+            return this;
+        }
+
+        /**
+         * 设置一个裁剪的option
+         * @param cropOption
+         * @return
+         */
+        public ListOption withCropOption(@NonNull CropOption cropOption){
+            Bundle bundle = cropOption.getBundle();
+            Bundle cropBundle = mListBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
+            if(cropBundle == null) {
+                mListBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE, bundle);
+            }else {
+                cropBundle.putAll(bundle);
+                mListBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE, cropBundle);
+            }
+            return this;
+        }
 
         public void start(Activity activity, int requestCode){
             activity.startActivityForResult(getIntent(activity),requestCode);
@@ -66,15 +164,139 @@ public class Photo {
         }
 
         private Intent getIntent(Context context) {
+            boolean needCamera = mListBundle.getBoolean(EXTRA_NEED_CAMERA);
+            if(needCamera){
+                Uri cameraUri =mListBundle.getParcelable(EXTRA_CAMERA_URI);
+                if(cameraUri == null){
+                    throw new NullPointerException("camera_uri不能为空，请调用setCameraUri(Uri saveUri)设置相机uri");
+                }
+            }
             mListIntent.setClass(context,PhotoListActivity.class);
             mListIntent.putExtras(mListBundle);
             return mListIntent;
         }
     }
 
+
+    @IntDef({MODE_OPTION,MODE_CHECK})
+    public @interface Mode{
+    }
+    /**
+     * 操作模式，可启用大图的裁剪、选择功能
+     * */
+    public static final int MODE_OPTION = 1;
+
+    /**查
+     * 看模式，可启用大图的删除功能
+     * */
+    public static final int MODE_CHECK = 2;
+
     public static class BigImgOptin{
 
+        public static final String EXTRA_CROP_OPTION_BUNDLE = "extra_crop_option_bundle";
+        public static final String EXTRA_BIG_IMG_PATHS = "extra_big_img_paths";
+        public static final String EXTRA_MODE = "extra_mode";
+        public static final String EXTRA_CAN_DELETE = "extra_can_delete";
+        public static final String EXTRA_NEED_CROP = "extra_need_crop";
+        public static final String EXTRA_MAX_SELECTOR_COUNT = "extra_max_selector_count";
 
+
+        private Bundle mBigImgBundle;
+        private Intent mBigImgIntent;
+
+        public BigImgOptin(@NonNull ArrayList<String> imgPath){
+            mBigImgIntent = new Intent();
+            mBigImgBundle = new Bundle();
+            mBigImgBundle.putStringArrayList(EXTRA_BIG_IMG_PATHS,imgPath);
+        }
+
+        public Bundle getBigImgBundle(){
+            return mBigImgBundle;
+        }
+
+        /**
+         * 设置最大选择数量，只要模式为{@link #MODE_OPTION}才有效
+         */
+        public BigImgOptin setMaxSelectorCount(int maxSelectorCount){
+            mBigImgBundle.putInt(EXTRA_MAX_SELECTOR_COUNT,maxSelectorCount);
+            return this;
+        }
+
+
+        /**
+         * 是否可编辑(裁剪)，只要模式为{@link #MODE_OPTION}才有效
+         */
+        public BigImgOptin canCrop(boolean needCrop){
+            mBigImgBundle.putBoolean(EXTRA_NEED_CROP,needCrop);
+            return this;
+        }
+
+        /**
+         * 设置裁剪的模式 {@link #CROP_MODE_CIRCLE},{@link #CROP_MODE_SQUARE}
+         * @param cropMode
+         * @return
+         */
+        public BigImgOptin setCropMode(@CropMode int cropMode){
+            Bundle cropBundle = mBigImgBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
+            if(cropBundle == null){
+                cropBundle = new Bundle();
+            }
+            mBigImgBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
+            return this;
+        }
+
+        /**
+         * 是否可删除，只要模式为{@link #MODE_CHECK}才有效
+         */
+        public BigImgOptin canDelete(boolean canDelete){
+            mBigImgBundle.putBoolean(EXTRA_CAN_DELETE,canDelete);
+            return this;
+        }
+
+        /**
+         * 设置查看大图的模式
+         * @param mode
+         * @return
+         */
+        public BigImgOptin setMode(@Mode int mode){
+            mBigImgBundle.putInt(EXTRA_MODE,mode);
+            return this;
+        }
+
+        /**
+         * 设置一个裁剪的option
+         * @param cropOption
+         * @return
+         */
+        public BigImgOptin withCropOption(@NonNull CropOption cropOption){
+            Bundle bundle = cropOption.getBundle();
+            Bundle cropBundle = mBigImgBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
+            if(cropBundle == null) {
+                mBigImgBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE, bundle);
+            }else {
+                cropBundle.putAll(bundle);
+                mBigImgBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
+            }
+            return this;
+        }
+
+        public void start(Activity activity, int requestCode){
+            activity.startActivityForResult(getIntent(activity),requestCode);
+        }
+
+        public void start(Fragment fragment, int requestCode){
+            fragment.startActivityForResult(getIntent(fragment.getContext()),requestCode);
+        }
+
+        public void start(Context context){
+            context.startActivity(getIntent(context));
+        }
+
+        private Intent getIntent(Context context) {
+            mBigImgIntent.setClass(context,ShowImageActivity.class);
+            mBigImgIntent.putExtras(mBigImgBundle);
+            return mBigImgIntent;
+        }
     }
 
 
@@ -108,7 +330,7 @@ public class Photo {
             mCropBundle.putParcelable(EXTRA_OUTPUT_URI,outputUri);
         }
 
-        public Bundle getBound(){
+        public Bundle getBundle(){
             return mCropBundle;
         }
 
@@ -209,8 +431,7 @@ public class Photo {
          * @param intent
          * @return
          */
-        public static Uri getResult(Intent intent){
-            if(intent == null) return null;
+        public static Uri getResult(@NonNull Intent intent){
             return intent.getParcelableExtra(CropActivity.EXTRA_RESULT_URI);
         }
 
@@ -219,7 +440,7 @@ public class Photo {
          * @param intent
          * @return
          */
-        public static Throwable getError(Intent intent){
+        public static Throwable getError(@NonNull Intent intent){
             return (Throwable) intent.getSerializableExtra(CropActivity.EXTRA_ERROR);
         }
 

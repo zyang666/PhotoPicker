@@ -9,11 +9,6 @@ import android.view.Window;
 
 import com.photopicker.R;
 
-/**
- * Loading对话框
- * Created by Leo on 2017/7/5.
- */
-
 public class LoadingDialog extends AppCompatDialog {
 
     private BackPressedClickListener mBackPressedClickListener;

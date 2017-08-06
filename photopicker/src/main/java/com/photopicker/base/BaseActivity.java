@@ -5,7 +5,8 @@ import android.support.v7.app.AppCompatActivity;
 import com.photopicker.widget.LoadingDialog;
 
 /**
- * Created by zhangyang on 2017/8/4.
+ * Created by zy on 2017/8/6.
+ *
  */
 
 public class BaseActivity extends AppCompatActivity{

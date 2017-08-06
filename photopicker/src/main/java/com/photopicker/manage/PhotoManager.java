@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
+import android.widget.ImageView;
 
 import com.photopicker.bean.Folder;
 import com.photopicker.bean.Images;
@@ -16,7 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Created by zhangyang on 2017/8/2.
+ * Created by zy on 2017/8/6.
  *
  * 图片数据管理类
  */
@@ -56,7 +57,7 @@ public class PhotoManager implements Handler.Callback {
                 if(obj.callBack != null) {
                     if (obj.folders != null){
                         mFolders = obj.folders;
-                        obj.callBack.success(obj.folders);
+                        obj.callBack.success(mFolders);
                     }else {
                         obj.callBack.fail();
                     }
@@ -65,6 +66,10 @@ public class PhotoManager implements Handler.Callback {
         }
 
         return false;
+    }
+
+    private void addTask(Runnable runnable){
+        executorService.submit(runnable);
     }
 
     /**
@@ -76,13 +81,13 @@ public class PhotoManager implements Handler.Callback {
     public void loadAllImgs(Context context,boolean reload, final LoadAllImgCallBack callBack){
         if(mFolders == null || reload) {
             final WeakReference<Context> contextWeakReference = new WeakReference<>(context);
-            executorService.submit(new Runnable() {
+            addTask(new Runnable() {
                 @Override
                 public void run() {
                     MessageBean messageBean = new MessageBean();
                     messageBean.callBack = callBack;
                     messageBean.folders = mPhotoLoader.loadAllImages(contextWeakReference.get());
-                    if(mHandler != null) {
+                    if (mHandler != null) {
                         Message msg = mHandler.obtainMessage(10, messageBean);
                         mHandler.sendMessage(msg);
                     }
@@ -101,6 +106,16 @@ public class PhotoManager implements Handler.Callback {
         loadAllImgs(context,false,callBack);
     }
 
+    public void loadThumbnail(ImageView imageView, final String path){
+        imageView.setTag(path);
+        addTask(new Runnable() {
+            @Override
+            public void run() {
+                mPhotoLoader.loadThumbnail(path);
+            }
+        });
+
+    }
 
     /**
      * 获取某一文件夹下的所有图片信息
@@ -126,6 +141,7 @@ public class PhotoManager implements Handler.Callback {
     class MessageBean{
         LoadAllImgCallBack callBack;
         List<Folder> folders;
+        Exception exception;
     }
 
 
@@ -146,7 +162,6 @@ public class PhotoManager implements Handler.Callback {
         if(mPhotoLoader != null){
             mPhotoLoader = null;
         }
-
     }
 
     public static void release(){

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by zhangyang on 2017/8/2.
+ * Created by zy on 2017/8/6.
  * 图片所属的文件夹
  */
 

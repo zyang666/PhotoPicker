@@ -1,7 +1,7 @@
 package com.photopicker.bean;
 
 /**
- * Created by zhangyang on 2017/8/2.
+ * Created by zy on 2017/8/6.
  * 缩略图
  */
 
