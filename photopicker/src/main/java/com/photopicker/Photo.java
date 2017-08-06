@@ -13,6 +13,9 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 
+import com.photopicker.manage.PhotoLoader;
+import com.photopicker.manage.PhotoManager;
+
 import java.util.ArrayList;
 
 
@@ -27,11 +30,17 @@ public class Photo {
         return new CropOption(inputUri,outputUri);
     }
 
-    public static ListOption createListOptin(){
+    public static ListOption createListOptin(PhotoLoader photoLoader){
+        if(photoLoader != null){
+            PhotoManager.get().setPhotoLoader(photoLoader);
+        }
         return new ListOption();
     }
 
-    public static BigImgOptin createBigImgOptin(@NonNull ArrayList<String> imgPath){
+    public static BigImgOptin createBigImgOptin(@NonNull ArrayList<String> imgPath,PhotoLoader photoLoader){
+        if(photoLoader != null){
+            PhotoManager.get().setPhotoLoader(photoLoader);
+        }
         return new BigImgOptin(imgPath);
     }
 
@@ -56,6 +65,7 @@ public class Photo {
         public static final String EXTRA_NEED_CROP = "extra_need_crop";
         public static final String EXTRA_NEED_CAMERA = "extra_need_camera";
         public static final String EXTRA_CAMERA_URI = "extra_camera_uei";
+        public static final String EXTRA_GRID_NUM_COLUMNS = "extra_grid_num_columns";
 
         private Intent mListIntent;
         private Bundle mListBundle;
@@ -63,6 +73,16 @@ public class Photo {
         public ListOption(){
             mListIntent = new Intent();
             mListBundle = new Bundle();
+        }
+
+        /**
+         * 设置相册列表的列数
+         * @param numColumns
+         * @return
+         */
+        public ListOption setNumColumns(int numColumns){
+            mListBundle.putInt(EXTRA_GRID_NUM_COLUMNS,numColumns);
+            return this;
         }
 
         /**
@@ -199,6 +219,7 @@ public class Photo {
         public static final String EXTRA_CAN_DELETE = "extra_can_delete";
         public static final String EXTRA_NEED_CROP = "extra_need_crop";
         public static final String EXTRA_MAX_SELECTOR_COUNT = "extra_max_selector_count";
+        public static final String EXTRA_CURRENT_POSITOIN = "extra_current_position";
 
 
         private Bundle mBigImgBundle;
@@ -212,6 +233,16 @@ public class Photo {
 
         public Bundle getBigImgBundle(){
             return mBigImgBundle;
+        }
+
+        /**
+         * 设置当前显示的position
+         * @param position
+         * @return
+         */
+        public BigImgOptin setCurrentPosition(int position){
+            mBigImgBundle.putInt(EXTRA_CURRENT_POSITOIN,position);
+            return this;
         }
 
         /**

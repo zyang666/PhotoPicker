@@ -3,89 +3,9 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical">
-
-    <Button
-        android:id="@+id/btn"
+    <FrameLayout
+        android:id="@+id/fl_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="开始"/>
-    <LinearLayout
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <Button
-            android:id="@+id/btn_start"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="MODE_START"/>
-        <Button
-            android:id="@+id/btn_center"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="MODE_CENTER"/>
-        <Button
-            android:id="@+id/btn_end"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="MODE_END"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <EditText
-            android:id="@+id/edt_left"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:inputType="number"/>
-
-        <EditText
-            android:id="@+id/edt_right"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:inputType="number"/>
-    </LinearLayout>
-
-    <Button
-        android:visibility="visible"
-        android:id="@+id/btn_crop"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="裁剪"/>
-    <Button
-        android:visibility="visible"
-        android:id="@+id/btn_rotate"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="旋转"/>
-
-    <ImageView
-        android:visibility="gone"
-        android:id="@+id/img"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"/>
-
-    <ImageView
-        android:visibility="visible"
-        android:id="@+id/target_img"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
-    <!--<ScrollView-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="match_parent">-->
-    <!--<LinearLayout-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="match_parent">-->
-
-    <!--<ImageView-->
-    <!--android:id="@+id/img"-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="wrap_content"/>-->
-    <!--</LinearLayout>-->
-    <!--</ScrollView>-->
+        android:layout_height="match_parent">
+    </FrameLayout>
 </LinearLayout>

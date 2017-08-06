@@ -1,7 +1,10 @@
 package com.photopicker.base;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -16,6 +19,7 @@ import com.photopicker.R;
 import com.photopicker.bean.Folder;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
+import com.photopicker.util.PermissionsUtil;
 import com.photopicker.util.PhotoUtil;
 import com.photopicker.widget.PhotoListView;
 
@@ -48,22 +52,20 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
         mToolbarContainer = (FrameLayout) getView().findViewById(R.id.toolbar_container);
         mBottomContainer = (FrameLayout) getView().findViewById(R.id.bottom_container);
         mPhotoListView = (PhotoListView) getView().findViewById(R.id.photo_list_view);
+        mPhotoListView.setOption(this);
         mToolbarContainer.addView(getToolbar());
         if(showBottomLayout()) {
             mBottomContainer.addView(getBottomView());
         }
 
-        processIntent();
         init();
+        boolean pass = PermissionsUtil.checkPermissions(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE, 10);
+        if(pass){
+            loadData();
+        }
     }
 
-    protected void processIntent() {
-
-
-    }
-
-    private void init() {
-        mPhotoListView.setOption(this);
+    private void loadData(){
         PhotoManager.get().loadAllImgs(getContext(), new PhotoManager.LoadAllImgCallBack() {
             @Override
             public void success(List<Folder> folders) {
@@ -82,6 +84,19 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
             }
         });
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        Log.d(TAG, "onRequestPermissionsResult: ");
+        if(requestCode == 10){
+            Log.d(TAG, "onRequestPermissionsResult: grantResults[0]="+grantResults[0]);
+            Log.d(TAG, "onRequestPermissionsResult: g="+ PackageManager.PERMISSION_GRANTED);
+            Log.d(TAG, "onRequestPermissionsResult: "+permissions[0]);
+        }
+    }
+
+    protected abstract void init();
 
     protected View getBottomView(){
         return null;

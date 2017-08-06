@@ -1,14 +1,10 @@
 package com.photo.phototest;
 
-import android.Manifest;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
 import com.photopicker.Photo;
-import com.photopicker.PhotoListActivity;
-import com.photopicker.util.PermissionsUtil;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,13 +21,10 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_test).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PhotoListActivity.start(MainActivity.this);
-//                PhotoUtil.getAllImges(MainActivity.this);
 
-                Photo.createListOptin()
-                        .needCamera(true)
+
+                Photo.createListOptin(new ImageLoader())
                         .start(MainActivity.this);
-
 
 
             }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -22,6 +23,7 @@ import java.util.List;
  */
 
 public class PhotoListView extends GridView {
+    private static final String TAG = "PhotoListView";
 
     private PhotoListAdapter mPhotoListAdapter;
     private Option mOption;
@@ -80,6 +82,7 @@ public class PhotoListView extends GridView {
 
         @Override
         public int getCount() {
+            Log.d(TAG, "getCount: ==="+datas.size());
             return datas == null ? 0 : datas.size();
         }
 
@@ -96,6 +99,7 @@ public class PhotoListView extends GridView {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             PhotoListViewHolder holder = null;
+            Log.d(TAG, "getView: ");
             if(convertView == null){
                 int itemViewType = getItemViewType(position);
                 if(itemViewType == CAMERA){

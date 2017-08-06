@@ -4,15 +4,21 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.photopicker.bean.Folder;
 import com.photopicker.bean.Images;
+import com.photopicker.bean.ThumbnailImg;
+import com.photopicker.util.PhotoUtil;
 
 import java.lang.ref.WeakReference;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,16 +30,16 @@ import java.util.concurrent.Executors;
 
 public class PhotoManager implements Handler.Callback {
     private static final String TAG = "PhotoManager";
-
-    private PhotoLoader mPhotoLoader;
+    private static final int LOAD_ALL_IMG = 10;
+    private static final int SHOW_IMG = 11;
 
     private List<Folder> mFolders;
     private static ExecutorService executorService;
     private Handler mHandler;
+    private PhotoLoader mPhotoLoader;
 
     private PhotoManager(){
-        mPhotoLoader = new PhotoLoader();
-        executorService = Executors.newFixedThreadPool(3);
+        executorService = Executors.newSingleThreadExecutor();
         mHandler = new Handler(Looper.getMainLooper(),this);
     }
 
@@ -52,7 +58,7 @@ public class PhotoManager implements Handler.Callback {
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what){
-            case 10:
+            case LOAD_ALL_IMG:
                 MessageBean obj = (MessageBean) msg.obj;
                 if(obj.callBack != null) {
                     if (obj.folders != null){
@@ -86,9 +92,9 @@ public class PhotoManager implements Handler.Callback {
                 public void run() {
                     MessageBean messageBean = new MessageBean();
                     messageBean.callBack = callBack;
-                    messageBean.folders = mPhotoLoader.loadAllImages(contextWeakReference.get());
+                    messageBean.folders = loadAllImages(contextWeakReference.get());
                     if (mHandler != null) {
-                        Message msg = mHandler.obtainMessage(10, messageBean);
+                        Message msg = mHandler.obtainMessage(LOAD_ALL_IMG, messageBean);
                         mHandler.sendMessage(msg);
                     }
                 }
@@ -99,6 +105,47 @@ public class PhotoManager implements Handler.Callback {
         }
     }
 
+    @WorkerThread
+    private List<Folder> loadAllImages(Context context) {
+        if (context == null) return null;
+        List<Images> imageList = PhotoUtil.getAllImges(context);
+        Map<Integer, ThumbnailImg> thumbnailsSet = PhotoUtil.getAllThumbnailsSet(context);
+
+        //将获得的图片按文件夹分类出来
+        Map<String, Folder> tempFolder = new HashMap<>();
+        int size = imageList.size();
+        for (int i = 0; i < size; i++) {
+            Images images = imageList.get(i);
+            ThumbnailImg thumbnailImg = thumbnailsSet.get(images.getId());
+            if (thumbnailImg != null) {
+                images.setThumbnail(thumbnailImg.getPath());
+            }
+
+            Folder folder = tempFolder.get(images.getFolderName());
+            if (folder == null) {
+                folder = new Folder();
+                folder.setFolderName(images.getFolderName());
+                folder.setFirstImg(images);
+                tempFolder.put(folder.getFolderName(), folder);
+            }
+            folder.addImg(images);
+        }
+
+        List<Folder> folderList = new ArrayList<>();
+        Folder folderAll = new Folder();
+        folderAll.setFolderName("所有图片");
+        folderAll.setImges(imageList);
+        if (imageList.size() > 0) {
+            folderAll.setFirstImg(imageList.get(0));
+        }
+        folderList.add(folderAll);
+
+        for (String key : tempFolder.keySet()) {
+            folderList.add(tempFolder.get(key));
+        }
+        return folderList;
+    }
+
     /**
      * 加载所有图片,若有缓存，则拿缓存的数据
      */
@@ -106,15 +153,16 @@ public class PhotoManager implements Handler.Callback {
         loadAllImgs(context,false,callBack);
     }
 
-    public void loadThumbnail(ImageView imageView, final String path){
-        imageView.setTag(path);
-        addTask(new Runnable() {
-            @Override
-            public void run() {
-                mPhotoLoader.loadThumbnail(path);
-            }
-        });
+    public void setPhotoLoader(PhotoLoader photoLoader){
+        mPhotoLoader = photoLoader;
+    }
 
+    public void loadThumbnail(final ImageView imageView, final String path){
+        if(mPhotoLoader != null){
+            mPhotoLoader.load(imageView,path);
+        }else {
+            Log.e(TAG, "loadThumbnail: 请设置图片加载器");
+        }
     }
 
     /**
@@ -141,9 +189,7 @@ public class PhotoManager implements Handler.Callback {
     class MessageBean{
         LoadAllImgCallBack callBack;
         List<Folder> folders;
-        Exception exception;
     }
-
 
     /**
      * 释放资源
@@ -159,8 +205,9 @@ public class PhotoManager implements Handler.Callback {
             mHandler = null;
         }
 
-        if(mPhotoLoader != null){
-            mPhotoLoader = null;
+        if(mFolders != null){
+            mFolders.clear();
+            mFolders = null;
         }
     }
 
