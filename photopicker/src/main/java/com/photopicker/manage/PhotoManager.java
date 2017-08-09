@@ -14,11 +14,14 @@ import com.photopicker.bean.Images;
 import com.photopicker.bean.ThumbnailImg;
 import com.photopicker.util.PhotoUtil;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,6 +35,17 @@ public class PhotoManager implements Handler.Callback {
     private static final String TAG = "PhotoManager";
     private static final int LOAD_ALL_IMG = 10;
     private static final int SHOW_IMG = 11;
+    private static final int RESULT = 12;
+
+    /**
+     * 裁剪的集合,key : 未裁剪原路路径，value：裁剪后的路径
+     */
+    private Map<String,String> mCropPaths = new ConcurrentHashMap<>();
+
+    /**
+     * 已选择的图片路径
+     */
+    private Vector<String> mSelectedImgs = new Vector<>();
 
     private List<Folder> mFolders;
     private static ExecutorService executorService;
@@ -58,7 +72,7 @@ public class PhotoManager implements Handler.Callback {
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what){
-            case LOAD_ALL_IMG:
+            case LOAD_ALL_IMG://加载全部图片
                 MessageBean obj = (MessageBean) msg.obj;
                 if(obj.callBack != null) {
                     if (obj.folders != null){
@@ -69,12 +83,21 @@ public class PhotoManager implements Handler.Callback {
                     }
                 }
                 return true;
+
+            case RESULT://获取结果
+                MessageBean resultObj = (MessageBean) msg.obj;
+                if(resultObj.resultCallBack != null) {
+                    if (resultObj.result != null){
+                        resultObj.resultCallBack.callback(resultObj.result);
+                    }
+                }
+                return true;
         }
 
         return false;
     }
 
-    private void addTask(Runnable runnable){
+    public void addTask(Runnable runnable){
         executorService.submit(runnable);
     }
 
@@ -159,7 +182,13 @@ public class PhotoManager implements Handler.Callback {
 
     public void loadThumbnail(final ImageView imageView, final String path){
         if(mPhotoLoader != null){
-            mPhotoLoader.load(imageView,path);
+            //如果对于的路径有裁剪过的图片，则显示裁剪过的图片
+            String cropPath = mCropPaths.get(path);
+            if(!TextUtils.isEmpty(cropPath)){
+                mPhotoLoader.load(imageView, cropPath);
+            }else {
+                mPhotoLoader.load(imageView, path);
+            }
         }else {
             Log.e(TAG, "loadThumbnail: 请设置图片加载器");
         }
@@ -181,6 +210,94 @@ public class PhotoManager implements Handler.Callback {
         return null;
     }
 
+    public int getSelectorCount(){
+        return mSelectedImgs.size();
+    }
+
+    public List<String> getSelectedImgs(){
+        return mSelectedImgs;
+    }
+
+    public Map<String,String> getCropPaths(){
+        return mCropPaths;
+    }
+
+    /**
+     * 选择一张图片路径
+     * @param path
+     */
+    public void selector(String path){
+        if(!TextUtils.isEmpty(path) && !mSelectedImgs.contains(path)){
+            mSelectedImgs.add(path);
+        }
+    }
+
+    /**
+     * 取消选择一张图片路径
+     * @param path
+     */
+    public void cancelSelector(String path){
+        if(!TextUtils.isEmpty(path) && mSelectedImgs.contains(path)){
+            mSelectedImgs.remove(path);
+        }
+    }
+
+    /**
+     * 保存一张裁剪过的图片路径
+     * @param srcPath 未裁剪的图片路径
+     * @param cropPath 以裁剪的图片路径，与srcPath对应
+     */
+    public void saveCropImg(String srcPath,String cropPath){
+        if(!TextUtils.isEmpty(srcPath) && !TextUtils.isEmpty(cropPath)){
+            mCropPaths.put(srcPath,cropPath);
+        }
+    }
+
+    /**
+     * 获取结果，未裁剪的图片自动进行裁剪，裁剪比例为1：1
+     * @param context
+     * @param cropOutDirectoryPath 裁剪之后的图片存放的目录
+     * @param resultCallBack
+     */
+    public void getResult(Context context, final String cropOutDirectoryPath, final ResultCallBack resultCallBack){
+        final WeakReference<Context> contextWeakReference = new WeakReference<>(context);
+        addTask(new Runnable() {
+            @Override
+            public void run() {
+                List<String> result = new ArrayList<>();
+                for (String selectedImg : mSelectedImgs) {
+                    String cropPath = mCropPaths.get(selectedImg);
+                    if(TextUtils.isEmpty(cropPath)){
+                        Context context = contextWeakReference.get();
+                        if(context == null) return;
+
+                        String outPath = cropOutDirectoryPath+"/"+System.currentTimeMillis() + ".jpg";
+                        PhotoUtil.autoCrop(context,selectedImg,outPath);
+                        File file = new File(outPath);
+                        if (file.exists()) {
+                            result.add(outPath);
+                        }else {
+                            Log.e(TAG, "onClick: 裁剪失败，selectedImg="+selectedImg);
+                            result.add(selectedImg);
+                        }
+                    }else {
+                        result.add(cropPath);
+                    }
+                }
+
+                if (mHandler != null) {
+                    MessageBean messageBean = new MessageBean();
+                    messageBean.resultCallBack = resultCallBack;
+                    messageBean.result = result;
+                    Message msg = mHandler.obtainMessage(RESULT, messageBean);
+                    mHandler.sendMessage(msg);
+                }
+            }
+        });
+    }
+
+
+
     public interface LoadAllImgCallBack{
         void success(List<Folder> folders);
         void fail();
@@ -189,6 +306,13 @@ public class PhotoManager implements Handler.Callback {
     class MessageBean{
         LoadAllImgCallBack callBack;
         List<Folder> folders;
+        
+        ResultCallBack resultCallBack;
+        List<String> result;
+    }
+
+    public interface ResultCallBack{
+        void callback(List<String> result);
     }
 
     /**

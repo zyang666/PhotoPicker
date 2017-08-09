@@ -2,21 +2,20 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:background="@android:color/white"
     android:layout_height="match_parent">
 
     <FrameLayout
         android:id="@+id/toolbar_container"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:background="#2222">
+        android:layout_height="40dp">
     </FrameLayout>
 
     <FrameLayout
         android:id="@+id/bottom_container"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:layout_alignParentBottom="true"
-        android:background="#222233">
+        android:layout_alignParentBottom="true">
     </FrameLayout>
 
     <ImageView
@@ -26,7 +25,8 @@
         android:layout_height="match_parent"/>
 
     <com.photopicker.widget.PhotoListView
-        android:padding="2dp"
+        android:paddingLeft="2dp"
+        android:paddingRight="2dp"
         android:visibility="visible"
         android:id="@+id/photo_list_view"
         android:layout_width="match_parent"

@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                 Photo.createListOptin(new ImageLoader())
+                        .setMaxSelectorCount(9)
                         .start(MainActivity.this);
 
 

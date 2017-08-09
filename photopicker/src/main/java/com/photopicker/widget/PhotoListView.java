@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.photopicker.bean.Images;
@@ -23,10 +24,12 @@ import java.util.List;
  */
 
 public class PhotoListView extends GridView {
-    private static final String TAG = "PhotoListView";
+
+    public static final int CAMERA = 1;
 
     private PhotoListAdapter mPhotoListAdapter;
     private Option mOption;
+    private boolean mShowCamera;
 
     public PhotoListView(Context context) {
         this(context,null);
@@ -34,12 +37,6 @@ public class PhotoListView extends GridView {
 
     public PhotoListView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context,attrs);
-    }
-
-    private void init(Context context, AttributeSet attrs) {
-        mPhotoListAdapter = new PhotoListAdapter(new ArrayList<Images>());
-        setAdapter(mPhotoListAdapter);
     }
 
     public void setOption(@NonNull Option option){
@@ -47,13 +44,30 @@ public class PhotoListView extends GridView {
     }
 
     public void setData(List<Images> data){
-        mPhotoListAdapter.setDatas(data);
-        mPhotoListAdapter.notifyDataSetChanged();
+        if(mOption != null && !(mOption.showCamera() == mShowCamera)){
+            mPhotoListAdapter = new PhotoListAdapter(data);
+            setAdapter(mPhotoListAdapter);
+        }else {
+            if (mPhotoListAdapter == null) {
+                mPhotoListAdapter = new PhotoListAdapter(data);
+                setAdapter(mPhotoListAdapter);
+            } else {
+                mPhotoListAdapter.setDatas(data);
+                mPhotoListAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+
+    public int getItemViewType(int position){
+        if(mPhotoListAdapter == null){
+            return 0;
+        }
+        return mPhotoListAdapter.getItemViewType(position);
     }
 
     class PhotoListAdapter extends BaseAdapter{
 
-        private static final int CAMERA = 1;
+
 
         List<Images> datas;
 
@@ -66,23 +80,28 @@ public class PhotoListView extends GridView {
 
         @Override
         public int getItemViewType(int position) {
-            if(position == 0 && mOption != null && mOption.showCamera()){
+            /*if(position == 0 && mOption != null && mOption.showCamera()){
+                return CAMERA;
+            }*/
+            if(position == 0 && mShowCamera){
                 return CAMERA;
             }
+
             return super.getItemViewType(position);
         }
 
         @Override
         public int getViewTypeCount() {
             if(mOption != null && mOption.showCamera()){
+                mShowCamera = true;
                return super.getViewTypeCount() + 1;
             }
+            mShowCamera = false;
             return super.getViewTypeCount();
         }
 
         @Override
         public int getCount() {
-            Log.d(TAG, "getCount: ==="+datas.size());
             return datas == null ? 0 : datas.size();
         }
 
@@ -98,51 +117,60 @@ public class PhotoListView extends GridView {
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            PhotoListViewHolder holder = null;
-            Log.d(TAG, "getView: ");
-            if(convertView == null){
-                int itemViewType = getItemViewType(position);
-                if(itemViewType == CAMERA){
+
+            //若需要的话，第一个条目为照相机条目
+            if(getItemViewType(position) == CAMERA){
+                PhotoListViewHolder cameraHolder = null;
+                if (convertView == null) {
                     ImageView imageView = new ImageView(getContext());
-                    holder = new CameraViewHolder(imageView);
+                    ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                    imageView.setLayoutParams(params);
+                    imageView.setScaleType(ImageView.ScaleType.CENTER);
+                    cameraHolder = new CameraViewHolder(imageView);
+                    convertView = cameraHolder.itemView;
+                    convertView.setTag(cameraHolder);
                 }else {
-                    if(mOption != null) {
+                    cameraHolder = (PhotoListViewHolder) convertView.getTag();
+                }
+                cameraHolder.bind(null,position);
+                return convertView;
+
+            }else {
+
+                PhotoListViewHolder holder = null;
+                if(convertView == null){
+                    if (mOption != null) {
                         holder = mOption.getPhotoViewHolder();
-                    }else {
+                    } else {
                         holder = new EmptyViewHolder(new TextView(getContext()));
                     }
+                    convertView = holder.itemView;
+                    convertView.setTag(holder);
+                }else {
+                    holder = (PhotoListViewHolder) convertView.getTag();
                 }
-                convertView = holder.itemView;
-                convertView.setTag(holder);
-            }else {
-                holder = (PhotoListViewHolder) convertView.getTag();
+
+                int pos = position - (getViewTypeCount() - 1);
+                holder.bind(getItem(pos),pos);
+                return convertView;
             }
-            holder.bind(getItem(position),position);
-            return convertView;
         }
     }
 
-
-    public abstract static class PhotoListViewHolder{
-        public View itemView;
-
-        public PhotoListViewHolder(View itemView){
-            this.itemView = itemView;
-        }
-
-        public abstract void bind(Images images,int position);
-    }
+    /**
+     * 相机viewHolder
+     */
     class CameraViewHolder extends PhotoListViewHolder{
+        ImageView imageView;
         CameraViewHolder(ImageView itemView) {
             super(itemView);
+            this.imageView = itemView;
         }
 
         @Override
         public void bind(Images images, int position) {
-            if(mOption != null){
-                if(itemView instanceof ImageView){
-                    ((ImageView) itemView).setImageDrawable(mOption.getCameraIcon());
-                }
+            if(mOption != null && imageView != null){
+                imageView.setImageDrawable(mOption.getCameraIcon());
             }
         }
     }
@@ -158,6 +186,18 @@ public class PhotoListView extends GridView {
         }
     }
 
+
+    public abstract static class PhotoListViewHolder{
+        public View itemView;
+
+        public PhotoListViewHolder(View itemView){
+            SquareLayout squareLayout = new SquareLayout(itemView.getContext());
+            squareLayout.addView(itemView);
+            this.itemView = squareLayout;
+        }
+
+        public abstract void bind(Images images,int position);
+    }
 
     public interface Option{
         boolean showCamera();

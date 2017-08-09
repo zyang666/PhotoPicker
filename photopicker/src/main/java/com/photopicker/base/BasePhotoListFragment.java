@@ -11,8 +11,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.photopicker.Photo;
 import com.photopicker.R;
@@ -21,6 +23,7 @@ import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
 import com.photopicker.util.PermissionsUtil;
 import com.photopicker.util.PhotoUtil;
+import com.photopicker.widget.LoadingDialog;
 import com.photopicker.widget.PhotoListView;
 
 import java.util.ArrayList;
@@ -31,8 +34,11 @@ import java.util.List;
  *
  */
 
-public abstract class BasePhotoListFragment extends Fragment implements PhotoListView.Option {
+public abstract class BasePhotoListFragment extends Fragment implements PhotoListView.Option, AdapterView.OnItemClickListener {
     private static final String TAG = "BasePhotoListFragment";
+
+    private static final int REQUEST_CODE_CAMERA_PERMISSIONS = 0;
+    private static final int REQUEST_CODE_READ_PERMISSIONS = 1;
 
     protected FrameLayout mToolbarContainer;
     protected FrameLayout mBottomContainer;
@@ -42,8 +48,7 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_base_list, container, false);
-        return view;
+        return inflater.inflate(R.layout.fragment_base_list, container, false);
     }
 
     @Override
@@ -52,21 +57,24 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
         mToolbarContainer = (FrameLayout) getView().findViewById(R.id.toolbar_container);
         mBottomContainer = (FrameLayout) getView().findViewById(R.id.bottom_container);
         mPhotoListView = (PhotoListView) getView().findViewById(R.id.photo_list_view);
+        mPhotoListView.setOnItemClickListener(this);
         mPhotoListView.setOption(this);
         mToolbarContainer.addView(getToolbar());
         if(showBottomLayout()) {
             mBottomContainer.addView(getBottomView());
+        }else {
+            mBottomContainer.setVisibility(View.GONE);
         }
 
         init();
         boolean pass = PermissionsUtil.checkPermissions(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE, 10);
         if(pass){
-            loadData();
+            loadData(false);
         }
     }
 
-    private void loadData(){
-        PhotoManager.get().loadAllImgs(getContext(), new PhotoManager.LoadAllImgCallBack() {
+    protected void loadData(boolean reload){
+        PhotoManager.get().loadAllImgs(getContext(),reload, new PhotoManager.LoadAllImgCallBack() {
             @Override
             public void success(List<Folder> folders) {
                 if(folders != null && folders.size() > 0) {
@@ -88,15 +96,49 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        Log.d(TAG, "onRequestPermissionsResult: ");
-        if(requestCode == 10){
-            Log.d(TAG, "onRequestPermissionsResult: grantResults[0]="+grantResults[0]);
-            Log.d(TAG, "onRequestPermissionsResult: g="+ PackageManager.PERMISSION_GRANTED);
-            Log.d(TAG, "onRequestPermissionsResult: "+permissions[0]);
+        if (requestCode == REQUEST_CODE_CAMERA_PERMISSIONS) {//申请相机权限回调
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission Granted
+//                startCamera();
+            } else {
+                // Permission Denied
+                Toast.makeText(getContext(),"没有相机权限，无法进入相机拍照！",Toast.LENGTH_SHORT).show();
+            }
+        }else if(requestCode == REQUEST_CODE_READ_PERMISSIONS){//申请读写权限回调
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                loadData(false);
+            } else {
+                Toast.makeText(getContext(),"没有权限，无法获取图片内容！",Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
-    protected abstract void init();
+    private LoadingDialog mNoCancelLoading;
+    public void showNoCancelLoading() {
+        if(mNoCancelLoading == null) {
+            mNoCancelLoading = new LoadingDialog(getContext());
+            mNoCancelLoading.setCancelable(false);
+            mNoCancelLoading.setCanceledOnTouchOutside(false);
+            mNoCancelLoading.setBackPressedClickListener(new LoadingDialog.BackPressedClickListener() {
+                @Override
+                public void onBackPressed() {
+                    getActivity().finish();
+                    mNoCancelLoading.dismiss();
+                }
+            });
+        }
+        mNoCancelLoading.show();
+    }
+
+    public void hideNoCancelLoading(){
+        if(mNoCancelLoading != null && mNoCancelLoading.isShowing()){
+            mNoCancelLoading.dismiss();
+        }
+    }
+
+    protected void init(){
+        //nothing
+    }
 
     protected View getBottomView(){
         return null;
@@ -109,5 +151,4 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
      * @return
      */
     protected abstract boolean showBottomLayout();
-
 }

@@ -5,10 +5,13 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.WindowManager;
 
+import com.photopicker.R;
 import com.photopicker.bean.Images;
 import com.photopicker.bean.ThumbnailImg;
 
@@ -126,24 +129,28 @@ public class PhotoUtil {
      * @param context
      * @param inputPaths       需要裁剪的图片的路径集
      * @param outDirectoryPath 裁剪后的图片保存的文件夹的路径
-     * @return
+     * @return 返回结果，key：图片原路径，value：裁剪后的图片路径
      */
-    public static List<String> autoCrop(Context context, List<String> inputPaths, String outDirectoryPath) {
+    public static Map<String,String> autoCrop(Context context, List<String> inputPaths, String outDirectoryPath) {
         if (inputPaths == null || inputPaths.isEmpty()) {
             return null;
         }
 
-        List<String> outPaths = new ArrayList<>();
+        Map<String,String> outPaths = new HashMap<>();
         for (String inputPath : inputPaths) {
             String outImgPath = outDirectoryPath + System.currentTimeMillis() + ".jpg";
             autoCrop(context, inputPath, outImgPath);
             File file = new File(outImgPath);
             if (file.exists()) {
-                outPaths.add(outImgPath);
+//                outPaths.add(outImgPath);
+                outPaths.put(inputPath,outImgPath);
+            }else {
+                outPaths.put(inputPath,"");
             }
         }
         return outPaths;
     }
+
 
     /**
      * 自动裁剪图片,居中裁剪，裁剪比例为 1:1
@@ -382,4 +389,16 @@ public class PhotoUtil {
         return tempThumbnailsSet;
     }
 
+    public static Drawable getDrawableFromResId(Context context, int drawId) {
+        if(context == null){
+            return null;
+        }
+        Drawable drawable = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            drawable = context.getDrawable(drawId);
+        }else {
+            drawable = context.getResources().getDrawable(drawId);
+        }
+        return drawable;
+    }
 }

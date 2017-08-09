@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.annotation.ColorInt;
 import android.support.annotation.IntDef;
 import android.support.annotation.IntRange;
@@ -60,11 +59,12 @@ public class Photo {
     public static class ListOption{
 
         public static final String EXTRA_CROP_OPTION_BUNDLE = "extra_crop_option_bundle";
-        public static final String EXTRA_BIG_IMG_BUNDLE = "extra_big_img_bundle";
+        public static final String EXTRA_BIG_IMG_OPTION_BUNDLE = "extra_big_img_option_bundle";
         public static final String EXTRA_MAX_SELECTOR_COUNT = "extra_max_selector_count";
         public static final String EXTRA_NEED_CROP = "extra_need_crop";
         public static final String EXTRA_NEED_CAMERA = "extra_need_camera";
-        public static final String EXTRA_CAMERA_URI = "extra_camera_uei";
+        public static final String EXTRA_SHOW_BOTTOM_LAYOUT = "extra_show_bottom_layout";
+        public static final String EXTRA_CAMERA_URI = "extra_camera_uri";
         public static final String EXTRA_GRID_NUM_COLUMNS = "extra_grid_num_columns";
 
         private Intent mListIntent;
@@ -82,6 +82,15 @@ public class Photo {
          */
         public ListOption setNumColumns(int numColumns){
             mListBundle.putInt(EXTRA_GRID_NUM_COLUMNS,numColumns);
+            return this;
+        }
+
+        /**
+         * 是否需要显示底部布局
+         * @return
+         */
+        public ListOption showBottomLayout(boolean needBottomLayout){
+            mListBundle.putBoolean(EXTRA_SHOW_BOTTOM_LAYOUT,needBottomLayout);
             return this;
         }
 
@@ -144,12 +153,12 @@ public class Photo {
          */
         public ListOption withBigImgOption(@NonNull BigImgOptin bigImgOption){
             Bundle bigImgBundle = bigImgOption.getBigImgBundle();
-            Bundle bundle = mListBundle.getParcelable(EXTRA_BIG_IMG_BUNDLE);
+            Bundle bundle = mListBundle.getParcelable(EXTRA_BIG_IMG_OPTION_BUNDLE);
             if(bundle == null) {
-                mListBundle.putParcelable(EXTRA_BIG_IMG_BUNDLE, bigImgBundle);
+                mListBundle.putParcelable(EXTRA_BIG_IMG_OPTION_BUNDLE, bigImgBundle);
             }else {
                 bundle.putAll(bigImgBundle);
-                mListBundle.putParcelable(EXTRA_BIG_IMG_BUNDLE, bundle);
+                mListBundle.putParcelable(EXTRA_BIG_IMG_OPTION_BUNDLE, bundle);
             }
             return this;
         }
