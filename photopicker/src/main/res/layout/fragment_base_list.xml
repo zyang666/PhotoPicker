@@ -37,4 +37,12 @@
         android:verticalSpacing="2dp"
         android:numColumns="4">
     </com.photopicker.widget.PhotoListView>
+
+    <FrameLayout
+        android:layout_below="@id/toolbar_container"
+        android:id="@+id/override_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#55000000"
+        android:visibility="gone"/>
 </RelativeLayout>

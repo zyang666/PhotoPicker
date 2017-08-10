@@ -10,6 +10,7 @@ import java.util.List;
 
 public class Folder {
 
+    private boolean isSelector;
     //文件夹名字
     private String folderName;
     //文件夹中第一张图片
@@ -24,6 +25,18 @@ public class Folder {
         mImges.add(image);
     }
 
+    public int getImageCount(){
+        return mImges == null ? 0 : mImges.size();
+    }
+
+
+    public boolean isSelector() {
+        return isSelector;
+    }
+
+    public void setSelector(boolean selector) {
+        isSelector = selector;
+    }
     public String getFolderName() {
         return folderName;
     }

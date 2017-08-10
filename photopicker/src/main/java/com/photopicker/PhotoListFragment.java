@@ -6,16 +6,22 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
 import android.widget.AdapterView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.photopicker.base.BasePhotoListFragment;
+import com.photopicker.bean.Folder;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
 import com.photopicker.util.PermissionsUtil;
 import com.photopicker.util.PhotoUtil;
+import com.photopicker.widget.FolderPopupWindow;
 import com.photopicker.widget.PhotoListView;
 
 import java.util.List;
@@ -37,6 +43,9 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
     private boolean mNeedCrop;
     private boolean mNeedCamera;
     private boolean mShowBottomLayout;
+    private LinearLayout mTitleContainer;
+    private View mToolbar;
+    private FolderPopupWindow mPopupWindow;
 
     @Override
     protected void init() {
@@ -53,20 +62,52 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
             }
         }
 
-        updateCountText();
+        mPopupWindow = new FolderPopupWindow(getActivity());
+
+        initListener();
+    }
+
+    private void initListener() {
+        //popupWindow  dismiss
+        mPopupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                mOverrideView.setVisibility(View.GONE);
+                mCompleted.setVisibility(View.VISIBLE);
+                startArrowsAnimation(180, 0);
+            }
+        });
+
+        //选择文件夹
+        mPopupWindow.setOnBucketClickListener(new FolderPopupWindow.OnBucketClickListener() {
+            @Override
+            public void bucketClick(final String bucketName) {
+                loadImgFromFolderName(bucketName,true);
+                mTitle.setText(bucketName);
+                updateCountText();
+            }
+        });
     }
 
     @Override
     protected View getToolbar() {
-        View toolbar = View.inflate(getContext(), R.layout.layout_tool_bar, null);
-        View cancel = toolbar.findViewById(R.id.cancel);
-        mArrows = (ImageView) toolbar.findViewById(R.id.arrows);
-        mTitle = (TextView) toolbar.findViewById(R.id.title);
-        mCompleted = (TextView) toolbar.findViewById(R.id.completed);
+        mToolbar = View.inflate(getContext(), R.layout.layout_tool_bar, null);
+        mArrows = (ImageView) mToolbar.findViewById(R.id.arrows);
+        mTitle = (TextView) mToolbar.findViewById(R.id.title);
+        mTitleContainer = (LinearLayout) mToolbar.findViewById(R.id.title_container);
+        mCompleted = (TextView) mToolbar.findViewById(R.id.completed);
+        View cancel = mToolbar.findViewById(R.id.cancel);
+
         cancel.setOnClickListener(this);
-        mTitle.setOnClickListener(this);
+        mTitleContainer.setOnClickListener(this);
         mCompleted.setOnClickListener(this);
-        return toolbar;
+        updateCountText();
+        return mToolbar;
+    }
+
+    @Override
+    protected void firstLoadDataSuccess(List<Folder> data) {
+        mPopupWindow.setData(data);
     }
 
 
@@ -153,9 +194,22 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
     public void onClick(View v) {
         int id = v.getId();
         if(id == R.id.cancel){//取消
-            getActivity().finish();
+            if(mPopupWindow.isShowing()){
+                mPopupWindow.dismiss();
+            }else{
+                getActivity().finish();
+            }
 
-        }else if(id == R.id.title){
+
+        }else if(id == R.id.title_container){
+            if(mPopupWindow != null) {
+                mPopupWindow.showPopupWindow(mToolbar);
+                mOverrideView.setVisibility(View.VISIBLE);
+            }
+            //popupWindow弹出的时候隐藏右上角的上传
+            mCompleted.setVisibility(View.GONE);
+            startArrowsAnimation(0, 180);
+
 
         }else if(id == R.id.completed){//完成
             showNoCancelLoading();
@@ -172,6 +226,18 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
                         }
                     });
         }
+    }
+
+    private void startArrowsAnimation(float fromDegrees, float toDegrees) {
+        mArrows.clearAnimation();
+        RotateAnimation rotateAnimation = new RotateAnimation(fromDegrees, toDegrees,
+                Animation.RELATIVE_TO_SELF,
+                0.5f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f);
+        rotateAnimation.setDuration(0);
+        rotateAnimation.setFillAfter(true);
+        mArrows.startAnimation(rotateAnimation);
     }
 
     //--------------------------------- view holder ------------------------------------------------
@@ -194,8 +260,10 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
             PhotoManager.get().loadThumbnail(mItemIcon, images.getImgPath());
             if (images.isSelector()) {
                 mCoverView.setVisibility(View.VISIBLE);
+                mSelectorIcon.setSelected(true);
             } else {
                 mCoverView.setVisibility(View.GONE);
+                mSelectorIcon.setSelected(false);
             }
 
             final String path = images.getImgPath();

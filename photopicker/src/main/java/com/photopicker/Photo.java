@@ -89,8 +89,8 @@ public class Photo {
          * 是否需要显示底部布局
          * @return
          */
-        public ListOption showBottomLayout(boolean needBottomLayout){
-            mListBundle.putBoolean(EXTRA_SHOW_BOTTOM_LAYOUT,needBottomLayout);
+        public ListOption showBottomLayout(boolean showBottomLayout){
+            mListBundle.putBoolean(EXTRA_SHOW_BOTTOM_LAYOUT,showBottomLayout);
             return this;
         }
 
