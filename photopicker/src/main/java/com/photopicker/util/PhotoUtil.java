@@ -10,6 +10,7 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.photopicker.R;
 import com.photopicker.bean.Images;
@@ -400,5 +401,9 @@ public class PhotoUtil {
             drawable = context.getResources().getDrawable(drawId);
         }
         return drawable;
+    }
+
+    public static void showShortToast(Context context,String msg){
+        Toast.makeText(context,msg,Toast.LENGTH_SHORT).show();
     }
 }

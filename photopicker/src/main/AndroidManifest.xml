@@ -19,6 +19,7 @@
 
         <activity android:name=".PhotoListActivity"/>
         <activity android:name=".CropActivity"/>
+        <activity android:name=".PreviewPhotoActivity"/>
     </application>
 
 </manifest>

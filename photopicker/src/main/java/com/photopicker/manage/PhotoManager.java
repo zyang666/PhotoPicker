@@ -180,7 +180,7 @@ public class PhotoManager implements Handler.Callback {
         mPhotoLoader = photoLoader;
     }
 
-    public void loadThumbnail(final ImageView imageView, final String path){
+    public void loadImage(final ImageView imageView, final String path){
         if(mPhotoLoader != null){
             //如果对于的路径有裁剪过的图片，则显示裁剪过的图片
             String cropPath = mCropPaths.get(path);
@@ -190,7 +190,7 @@ public class PhotoManager implements Handler.Callback {
                 mPhotoLoader.load(imageView, path);
             }
         }else {
-            Log.e(TAG, "loadThumbnail: 请设置图片加载器");
+            Log.e(TAG, "loadImage: 请设置图片加载器");
         }
     }
 
@@ -210,7 +210,7 @@ public class PhotoManager implements Handler.Callback {
         return null;
     }
 
-    public int getSelectorCount(){
+    public int getSelectedCount(){
         return mSelectedImgs.size();
     }
 

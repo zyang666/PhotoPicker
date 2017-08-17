@@ -34,7 +34,6 @@ import java.util.List;
 public abstract class BasePhotoListFragment extends Fragment implements PhotoListView.Option, AdapterView.OnItemClickListener {
     private static final String TAG = "BasePhotoListFragment";
 
-    private static final int REQUEST_CODE_CAMERA_PERMISSIONS = 0;
     private static final int REQUEST_CODE_READ_PERMISSIONS = 1;
 
     private boolean isFirstLoad = true;
@@ -70,7 +69,7 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
         }else {
             mBottomContainer.setVisibility(View.GONE);
         }
-        boolean pass = PermissionsUtil.checkPermissions(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE, 10);
+        boolean pass = PermissionsUtil.checkPermissions(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE, REQUEST_CODE_READ_PERMISSIONS);
         if(pass){
             loadData(false);
         }
@@ -78,25 +77,6 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
 
     protected void loadData(boolean reload){
         loadImgFromFolderName(null,reload);
-
-
-        /*PhotoManager.get().loadAllImgs(getContext(),reload, new PhotoManager.LoadAllImgCallBack() {
-            @Override
-            public void success(List<Folder> folders) {
-                if(folders != null && folders.size() > 0) {
-                    Folder folder = folders.get(0);
-                    mImges = folder.getImges();
-                    mPhotoListView.setData(mImges);
-                }else {
-                    Log.e(TAG, "success: 加载手机图片为空");
-                }
-            }
-
-            @Override
-            public void fail() {
-                Log.e(TAG, "fail: 加载手机图片失败");
-            }
-        });*/
     }
 
     protected void loadImgFromFolderName(final String folderName, boolean reload){
@@ -136,7 +116,7 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CODE_CAMERA_PERMISSIONS) {//申请相机权限回调
+        /*if (requestCode == REQUEST_CODE_CAMERA_PERMISSIONS) {//申请相机权限回调
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission Granted
 //                startCamera();
@@ -144,7 +124,7 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
                 // Permission Denied
                 Toast.makeText(getContext(),"没有相机权限，无法进入相机拍照！",Toast.LENGTH_SHORT).show();
             }
-        }else if(requestCode == REQUEST_CODE_READ_PERMISSIONS){//申请读写权限回调
+        }else */if(requestCode == REQUEST_CODE_READ_PERMISSIONS){//申请读写权限回调
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 loadData(false);
             } else {

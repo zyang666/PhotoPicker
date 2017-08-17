@@ -2,7 +2,6 @@ package com.photopicker.widget;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
@@ -185,7 +184,7 @@ public class FolderPopupWindow extends PopupWindow{
 
                 Images images = bucket.getFirstImg();
                 if(images != null) {
-                    PhotoManager.get().loadThumbnail(holder.photo, images.getImgPath());
+                    PhotoManager.get().loadImage(holder.photo, images.getImgPath());
                 }
 
             }

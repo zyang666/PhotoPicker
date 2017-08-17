@@ -32,4 +32,7 @@ dependencies {
     //轻量级图片裁剪库 https://github.com/Yalantis/uCrop
     //中文解析：http://www.jianshu.com/p/523e77a10321
     compile 'com.github.yalantis:ucrop:2.2.1'
+
+    //支持缩放的图片 https://github.com/bm-x/PhotoView
+    compile 'com.bm.photoview:library:1.4.1'
 }

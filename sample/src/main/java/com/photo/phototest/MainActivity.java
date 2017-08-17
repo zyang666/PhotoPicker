@@ -22,9 +22,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-
                 Photo.createListOptin(new ImageLoader())
                         .setMaxSelectorCount(9)
+//                        .needCrop(true)
                         .showBottomLayout(true)
                         .start(MainActivity.this);
 

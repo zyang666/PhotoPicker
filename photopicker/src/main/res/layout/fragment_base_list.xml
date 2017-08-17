@@ -1,48 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
     android:layout_width="match_parent"
-    android:background="@android:color/white"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimaryDark"
+    android:fitsSystemWindows="true">
 
-    <FrameLayout
-        android:id="@+id/toolbar_container"
-        android:layout_width="match_parent"
-        android:layout_height="40dp">
-    </FrameLayout>
-
-    <FrameLayout
-        android:id="@+id/bottom_container"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_alignParentBottom="true">
-    </FrameLayout>
-
-    <ImageView
-        android:id="@+id/img"
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-
-    <com.photopicker.widget.PhotoListView
-        android:paddingLeft="2dp"
-        android:paddingRight="2dp"
-        android:visibility="visible"
-        android:id="@+id/photo_list_view"
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/bottom_container"
-        android:layout_below="@id/toolbar_container"
-        android:horizontalSpacing="2dp"
-        android:verticalSpacing="2dp"
-        android:numColumns="4">
-    </com.photopicker.widget.PhotoListView>
+        android:background="@android:color/white">
 
-    <FrameLayout
-        android:layout_below="@id/toolbar_container"
-        android:id="@+id/override_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#55000000"
-        android:visibility="gone"/>
-</RelativeLayout>
+        <FrameLayout
+            android:id="@+id/toolbar_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/bottom_container"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true">
+        </FrameLayout>
+
+        <ImageView
+            android:id="@+id/img"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+        <com.photopicker.widget.PhotoListView
+            android:id="@+id/photo_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/bottom_container"
+            android:layout_below="@id/toolbar_container"
+            android:horizontalSpacing="2dp"
+            android:numColumns="4"
+            android:paddingLeft="2dp"
+            android:paddingRight="2dp"
+            android:verticalSpacing="2dp"
+            android:visibility="visible">
+        </com.photopicker.widget.PhotoListView>
+
+        <FrameLayout
+            android:id="@+id/override_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/toolbar_container"
+            android:background="#55000000"
+            android:visibility="gone"/>
+    </RelativeLayout>
+</FrameLayout>

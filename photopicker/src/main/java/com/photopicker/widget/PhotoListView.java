@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * Created by zy on 2017/8/6.
- *
+ *  相册列表宫格view
  */
 
 public class PhotoListView extends GridView {
@@ -30,6 +30,7 @@ public class PhotoListView extends GridView {
     private PhotoListAdapter mPhotoListAdapter;
     private Option mOption;
     private boolean mShowCamera;
+    private int mAdditionCount;
 
     public PhotoListView(Context context) {
         this(context,null);
@@ -44,7 +45,15 @@ public class PhotoListView extends GridView {
     }
 
     public void setData(List<Images> data){
-        if(mOption != null && !(mOption.showCamera() == mShowCamera)){
+        boolean showCamera = mOption.showCamera();
+        if(showCamera){
+            mAdditionCount = 1;
+        }else {
+            mAdditionCount = 0;
+        }
+
+        if(mOption != null && showCamera != mShowCamera){
+            mShowCamera = showCamera;
             mPhotoListAdapter = new PhotoListAdapter(data);
             setAdapter(mPhotoListAdapter);
         }else {
@@ -65,9 +74,32 @@ public class PhotoListView extends GridView {
         return mPhotoListAdapter.getItemViewType(position);
     }
 
+    /**
+     * 获取数据，如果显示相机item，则需特殊处理，position需减掉1，获取到的数据才正确
+     * @param position
+     * @return
+     */
+    public Images getImages(int position) {
+        if(mPhotoListAdapter != null){
+            int realPos = getRealPos(position);
+            return mPhotoListAdapter.getItem(realPos);
+        }
+        return null;
+    }
+
+    /**
+     * 获取数据的position，若有相机item，需特殊处理，position需减掉1才是images数据对应的position
+     * @return
+     */
+    public int getRealPos(int position){
+        if(mShowCamera){
+            return position - 1;
+        }else {
+            return position;
+        }
+    }
+
     class PhotoListAdapter extends BaseAdapter{
-
-
 
         List<Images> datas;
 
@@ -80,29 +112,23 @@ public class PhotoListView extends GridView {
 
         @Override
         public int getItemViewType(int position) {
-            /*if(position == 0 && mOption != null && mOption.showCamera()){
-                return CAMERA;
-            }*/
             if(position == 0 && mShowCamera){
                 return CAMERA;
             }
-
             return super.getItemViewType(position);
         }
 
         @Override
         public int getViewTypeCount() {
-            if(mOption != null && mOption.showCamera()){
-                mShowCamera = true;
+            if(mOption != null && mShowCamera){
                return super.getViewTypeCount() + 1;
             }
-            mShowCamera = false;
             return super.getViewTypeCount();
         }
 
         @Override
         public int getCount() {
-            return datas == null ? 0 : datas.size();
+            return datas == null ? 0 + mAdditionCount : datas.size() + mAdditionCount;
         }
 
         @Override
@@ -185,7 +211,6 @@ public class PhotoListView extends GridView {
         public void bind(Images images, int position) {
         }
     }
-
 
     public abstract static class PhotoListViewHolder{
         public View itemView;

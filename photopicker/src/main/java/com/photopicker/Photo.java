@@ -36,11 +36,11 @@ public class Photo {
         return new ListOption();
     }
 
-    public static BigImgOptin createBigImgOptin(@NonNull ArrayList<String> imgPath,PhotoLoader photoLoader){
+    public static PreviewOptin createPreviewOptin(PhotoLoader photoLoader){
         if(photoLoader != null){
             PhotoManager.get().setPhotoLoader(photoLoader);
         }
-        return new BigImgOptin(imgPath);
+        return new PreviewOptin();
     }
 
     @IntDef({CROP_MODE_SQUARE,CROP_MODE_CIRCLE})
@@ -59,7 +59,6 @@ public class Photo {
     public static class ListOption{
 
         public static final String EXTRA_CROP_OPTION_BUNDLE = "extra_crop_option_bundle";
-        public static final String EXTRA_BIG_IMG_OPTION_BUNDLE = "extra_big_img_option_bundle";
         public static final String EXTRA_MAX_SELECTOR_COUNT = "extra_max_selector_count";
         public static final String EXTRA_NEED_CROP = "extra_need_crop";
         public static final String EXTRA_NEED_CAMERA = "extra_need_camera";
@@ -132,6 +131,11 @@ public class Photo {
             if(cropBundle == null){
                 cropBundle = new Bundle();
             }
+            if(cropMode == Photo.CROP_MODE_CIRCLE){
+                cropBundle.putBoolean(Photo.CropOption.EXTRA_CIRCLE_DIMMED_LAYER,true);
+            }else {
+                cropBundle.putBoolean(Photo.CropOption.EXTRA_CIRCLE_DIMMED_LAYER,false);
+            }
             mListBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
             return this;
         }
@@ -143,23 +147,6 @@ public class Photo {
          */
         public ListOption setMaxSelectorCount(int maxSelectorCount){
             mListBundle.putInt(EXTRA_MAX_SELECTOR_COUNT,maxSelectorCount);
-            return this;
-        }
-
-        /**
-         * 设置一个大图的option
-         * @param bigImgOption
-         * @return
-         */
-        public ListOption withBigImgOption(@NonNull BigImgOptin bigImgOption){
-            Bundle bigImgBundle = bigImgOption.getBigImgBundle();
-            Bundle bundle = mListBundle.getParcelable(EXTRA_BIG_IMG_OPTION_BUNDLE);
-            if(bundle == null) {
-                mListBundle.putParcelable(EXTRA_BIG_IMG_OPTION_BUNDLE, bigImgBundle);
-            }else {
-                bundle.putAll(bigImgBundle);
-                mListBundle.putParcelable(EXTRA_BIG_IMG_OPTION_BUNDLE, bundle);
-            }
             return this;
         }
 
@@ -215,33 +202,43 @@ public class Photo {
      * */
     public static final int MODE_OPTION = 1;
 
-    /**查
-     * 看模式，可启用大图的删除功能
+    /**
+     * 查看模式，可启用大图的删除功能
      * */
     public static final int MODE_CHECK = 2;
 
-    public static class BigImgOptin{
+    public static class PreviewOptin {
 
         public static final String EXTRA_CROP_OPTION_BUNDLE = "extra_crop_option_bundle";
-        public static final String EXTRA_BIG_IMG_PATHS = "extra_big_img_paths";
         public static final String EXTRA_MODE = "extra_mode";
         public static final String EXTRA_CAN_DELETE = "extra_can_delete";
-        public static final String EXTRA_NEED_CROP = "extra_need_crop";
+        public static final String EXTRA_CAN_CROP = "extra_need_crop";
         public static final String EXTRA_MAX_SELECTOR_COUNT = "extra_max_selector_count";
         public static final String EXTRA_CURRENT_POSITOIN = "extra_current_position";
+        public static final String EXTRA_FOLDER_NAME = "extra_folder_name";
+        public static final String EXTRA_PATHS = "extra_paths";
 
 
-        private Bundle mBigImgBundle;
+        private Bundle mPreviewBundle;
         private Intent mBigImgIntent;
 
-        public BigImgOptin(@NonNull ArrayList<String> imgPath){
+        public PreviewOptin(){
             mBigImgIntent = new Intent();
-            mBigImgBundle = new Bundle();
-            mBigImgBundle.putStringArrayList(EXTRA_BIG_IMG_PATHS,imgPath);
+            mPreviewBundle = new Bundle();
         }
 
-        public Bundle getBigImgBundle(){
-            return mBigImgBundle;
+        public Bundle getPreviewBundle(){
+            return mPreviewBundle;
+        }
+
+        /**
+         * 设置需要预览的图片集
+         * @param imgPaths
+         * @return
+         */
+        public PreviewOptin setPaths(ArrayList<String> imgPaths){
+            mPreviewBundle.putStringArrayList(EXTRA_PATHS,imgPaths);
+            return this;
         }
 
         /**
@@ -249,25 +246,24 @@ public class Photo {
          * @param position
          * @return
          */
-        public BigImgOptin setCurrentPosition(int position){
-            mBigImgBundle.putInt(EXTRA_CURRENT_POSITOIN,position);
+        public PreviewOptin setCurrentPosition(int position){
+            mPreviewBundle.putInt(EXTRA_CURRENT_POSITOIN,position);
             return this;
         }
 
         /**
          * 设置最大选择数量，只要模式为{@link #MODE_OPTION}才有效
          */
-        public BigImgOptin setMaxSelectorCount(int maxSelectorCount){
-            mBigImgBundle.putInt(EXTRA_MAX_SELECTOR_COUNT,maxSelectorCount);
+        public PreviewOptin setMaxSelectorCount(int maxSelectorCount){
+            mPreviewBundle.putInt(EXTRA_MAX_SELECTOR_COUNT,maxSelectorCount);
             return this;
         }
-
 
         /**
          * 是否可编辑(裁剪)，只要模式为{@link #MODE_OPTION}才有效
          */
-        public BigImgOptin canCrop(boolean needCrop){
-            mBigImgBundle.putBoolean(EXTRA_NEED_CROP,needCrop);
+        public PreviewOptin canCrop(boolean canCrop){
+            mPreviewBundle.putBoolean(EXTRA_CAN_CROP,canCrop);
             return this;
         }
 
@@ -276,20 +272,25 @@ public class Photo {
          * @param cropMode
          * @return
          */
-        public BigImgOptin setCropMode(@CropMode int cropMode){
-            Bundle cropBundle = mBigImgBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
+        public PreviewOptin setCropMode(@CropMode int cropMode){
+            Bundle cropBundle = mPreviewBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
             if(cropBundle == null){
                 cropBundle = new Bundle();
             }
-            mBigImgBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
+            if(cropMode == Photo.CROP_MODE_CIRCLE){
+                cropBundle.putBoolean(Photo.CropOption.EXTRA_CIRCLE_DIMMED_LAYER,true);
+            }else {
+                cropBundle.putBoolean(Photo.CropOption.EXTRA_CIRCLE_DIMMED_LAYER,false);
+            }
+            mPreviewBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
             return this;
         }
 
         /**
          * 是否可删除，只要模式为{@link #MODE_CHECK}才有效
          */
-        public BigImgOptin canDelete(boolean canDelete){
-            mBigImgBundle.putBoolean(EXTRA_CAN_DELETE,canDelete);
+        public PreviewOptin canDelete(boolean canDelete){
+            mPreviewBundle.putBoolean(EXTRA_CAN_DELETE,canDelete);
             return this;
         }
 
@@ -298,8 +299,18 @@ public class Photo {
          * @param mode
          * @return
          */
-        public BigImgOptin setMode(@Mode int mode){
-            mBigImgBundle.putInt(EXTRA_MODE,mode);
+        public PreviewOptin setMode(@Mode int mode){
+            mPreviewBundle.putInt(EXTRA_MODE,mode);
+            return this;
+        }
+
+        /**
+         * 设置预览某一文件夹下所有图片
+         * @param name
+         * @return
+         */
+        public PreviewOptin setFolderName(String name){
+            mPreviewBundle.putString(EXTRA_FOLDER_NAME,name);
             return this;
         }
 
@@ -308,14 +319,14 @@ public class Photo {
          * @param cropOption
          * @return
          */
-        public BigImgOptin withCropOption(@NonNull CropOption cropOption){
+        public PreviewOptin withCropOption(@NonNull CropOption cropOption){
             Bundle bundle = cropOption.getBundle();
-            Bundle cropBundle = mBigImgBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
+            Bundle cropBundle = mPreviewBundle.getParcelable(EXTRA_CROP_OPTION_BUNDLE);
             if(cropBundle == null) {
-                mBigImgBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE, bundle);
+                mPreviewBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE, bundle);
             }else {
                 cropBundle.putAll(bundle);
-                mBigImgBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
+                mPreviewBundle.putParcelable(EXTRA_CROP_OPTION_BUNDLE,cropBundle);
             }
             return this;
         }
@@ -333,8 +344,8 @@ public class Photo {
         }
 
         private Intent getIntent(Context context) {
-            mBigImgIntent.setClass(context,ShowImageActivity.class);
-            mBigImgIntent.putExtras(mBigImgBundle);
+            mBigImgIntent.setClass(context,PreviewPhotoActivity.class);
+            mBigImgIntent.putExtras(mPreviewBundle);
             return mBigImgIntent;
         }
     }
