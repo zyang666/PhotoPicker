@@ -103,7 +103,7 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
         mCropImageView.setMaxScaleMultiplier(CropImageView.DEFAULT_MAX_SCALE_MULTIPLIER);
         mCropImageView.setImageToWrapCropBoundsAnimDuration(CropImageView.DEFAULT_IMAGE_TO_CROP_BOUNDS_ANIM_DURATION);
 
-        mCropImageView.setRotateEnabled(intent.getBooleanExtra(Photo.CropOption.EXTRA_ROTATE_ENABLED, true));
+        mCropImageView.setRotateEnabled(intent.getBooleanExtra(Photo.CropOption.EXTRA_ROTATE_ENABLED, false));
         mCropImageView.setScaleEnabled(intent.getBooleanExtra(Photo.CropOption.EXTRA_SCALE_ENABLED,true));
         float aspectRatioX = intent.getFloatExtra(Photo.CropOption.EXTRA_ASPECT_RATIO_X, 0);
         float aspectRatioY = intent.getFloatExtra(Photo.CropOption.EXTRA_ASPECT_RATIO_Y, 0);

@@ -20,7 +20,6 @@ import com.photopicker.bean.Folder;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
 import com.photopicker.util.PermissionsUtil;
-import com.photopicker.widget.FolderPopupWindow;
 import com.photopicker.widget.LoadingDialog;
 import com.photopicker.widget.PhotoListView;
 
@@ -43,7 +42,6 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
     protected PhotoListView mPhotoListView;
     protected List<Images> mImges;
     protected FrameLayout mOverrideView;
-    private FolderPopupWindow mPopupWindow;
 
     @Nullable
     @Override
@@ -64,12 +62,14 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
         init();
 
         mToolbarContainer.addView(getToolbar());
+        View bottomView = getBottomView();
         if(showBottomLayout()) {
-            mBottomContainer.addView(getBottomView());
+            mBottomContainer.addView(bottomView);
         }else {
             mBottomContainer.setVisibility(View.GONE);
         }
-        boolean pass = PermissionsUtil.checkPermissions(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE, REQUEST_CODE_READ_PERMISSIONS);
+        boolean pass = PermissionsUtil.checkPermissions(getActivity(),
+                Manifest.permission.READ_EXTERNAL_STORAGE, REQUEST_CODE_READ_PERMISSIONS);
         if(pass){
             loadData(false);
         }
@@ -82,7 +82,7 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
     protected void loadImgFromFolderName(final String folderName, boolean reload){
         if(reload){//重新加载，则清掉之前已经选择的图片
             PhotoManager.get().getCropPaths().clear();
-            PhotoManager.get().getSelectedImgs().clear();
+            PhotoManager.get().getSelectedPaths().clear();
         }
 
         PhotoManager.get().loadAllImgs(getContext(), reload, new PhotoManager.LoadAllImgCallBack() {
@@ -116,15 +116,7 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        /*if (requestCode == REQUEST_CODE_CAMERA_PERMISSIONS) {//申请相机权限回调
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission Granted
-//                startCamera();
-            } else {
-                // Permission Denied
-                Toast.makeText(getContext(),"没有相机权限，无法进入相机拍照！",Toast.LENGTH_SHORT).show();
-            }
-        }else */if(requestCode == REQUEST_CODE_READ_PERMISSIONS){//申请读写权限回调
+        if(requestCode == REQUEST_CODE_READ_PERMISSIONS){//申请读写权限回调
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 loadData(false);
             } else {

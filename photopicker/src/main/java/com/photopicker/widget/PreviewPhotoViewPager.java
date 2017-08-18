@@ -12,6 +12,9 @@ import com.bm.library.PhotoView;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -66,6 +69,19 @@ public class PreviewPhotoViewPager extends ViewPager{
         return 0;
     }
 
+    public void notifyDataSetChanged(){
+        if(mPreviewPhotoAdapter != null){
+            mPreviewPhotoAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public List<Images> getCurrentImages(){
+        if(mPreviewPhotoAdapter != null){
+            return mPreviewPhotoAdapter.getImages();
+        }
+        return null;
+    }
+
     /**
      * Created by zy on 2017/6/17.
      * 查看大图适配器
@@ -73,15 +89,18 @@ public class PreviewPhotoViewPager extends ViewPager{
 
     class PreviewPhotoAdapter extends PagerAdapter {
         private static final String TAG = "ShowBigImageAdapter";
-        private List<Images> images;
+        private List<Images> images = new ArrayList<>();
         private List<String> paths;
 
         public PreviewPhotoAdapter(List<Images> images){
-            this.images = images;
+            if(images == null) return;
+            this.images.addAll(images);
         }
 
         public void setData(List<Images> images){
-            this.images = images;
+            if(images != null) {
+                this.images.addAll(images);
+            }
             if(paths != null){
                 paths.clear();
             }
@@ -91,6 +110,10 @@ public class PreviewPhotoViewPager extends ViewPager{
         public void setPaths(List<String> paths) {
             this.paths = paths;
             notifyDataSetChanged();
+        }
+
+        public List<Images> getImages() {
+            return images;
         }
 
         public Images getItem(int position){
@@ -136,6 +159,7 @@ public class PreviewPhotoViewPager extends ViewPager{
             }
             Log.d(TAG, "instantiateItem: path="+path);
             PhotoManager.get().loadImage(imageView,path);
+
             imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

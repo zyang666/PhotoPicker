@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
              android:id="@+id/root_view"
+             android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:background="@color/colorPrimary"
              android:fitsSystemWindows="true">
@@ -17,38 +17,51 @@
             android:layout_height="match_parent"
             android:background="@android:color/black"/>
 
-        <RelativeLayout
-            android:id="@+id/bottom_bar"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_alignParentBottom="true"
-            android:background="#99ffffff"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
-            android:visibility="visible">
 
-            <TextView
-                android:id="@+id/tv_edit"
-                android:text="编辑"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:textColor="@android:color/white"
-                android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/bottom_bar"
+            android:layout_alignParentBottom="true"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.photopicker.widget.HorizontalRecyclerView
+                android:id="@+id/horizontal_view"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
 
-            <TextView
-                android:id="@+id/select_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:layout_marginRight="5dp"
-                android:drawableLeft="@drawable/bg_image_selector"
-                android:drawablePadding="10dp"
-                android:gravity="center_vertical"
-                android:text="选择"
-                android:textColor="@android:color/white"/>
-        </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="#99ffffff"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:visibility="visible">
+
+                <TextView
+                    android:id="@+id/tv_edit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:text="编辑"
+                    android:textColor="@android:color/white"/>
+
+                <TextView
+                    android:id="@+id/select_icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginRight="5dp"
+                    android:drawableLeft="@drawable/bg_image_selector"
+                    android:drawablePadding="10dp"
+                    android:gravity="center_vertical"
+                    android:text="选择"
+                    android:textColor="@android:color/white"/>
+            </RelativeLayout>
+
+        </LinearLayout>
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/tool_bar"
@@ -65,9 +78,9 @@
                 android:layout_height="?attr/actionBarSize">
 
                 <ImageView
-                    android:layout_gravity="center_vertical"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
                     android:scaleType="center"
                     android:src="@drawable/photo_ic_back_up"/>
             </FrameLayout>
@@ -82,14 +95,14 @@
                 android:textColor="@android:color/white"/>
 
             <TextView
-                android:visibility="gone"
                 android:id="@+id/completed"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="right"
                 android:layout_marginRight="15dp"
                 android:text="完成"
-                android:textColor="@color/color_text_selector"/>
+                android:textColor="@color/color_text_selector"
+                android:visibility="gone"/>
 
             <ImageView
                 android:id="@+id/iv_delete"

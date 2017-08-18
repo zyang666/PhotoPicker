@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 
 /**
- * Created by zhangyang on 2017/8/4.
+ * Created by zy on 2017/8/4.
  *
  */
 
@@ -65,6 +65,9 @@ public class Photo {
         public static final String EXTRA_SHOW_BOTTOM_LAYOUT = "extra_show_bottom_layout";
         public static final String EXTRA_CAMERA_URI = "extra_camera_uri";
         public static final String EXTRA_GRID_NUM_COLUMNS = "extra_grid_num_columns";
+        public static final String EXTRA_AVATAR_MODE = "extra_avatar_mode";
+        public static final String EXTRA_SELECTOR_LIST_RESULT = "extra_selector_list_result";
+        public static final String EXTRA_AUTO_CROP_ENABLE = "extra_auto_crop_enable";
 
         private Intent mListIntent;
         private Bundle mListBundle;
@@ -81,6 +84,25 @@ public class Photo {
          */
         public ListOption setNumColumns(int numColumns){
             mListBundle.putInt(EXTRA_GRID_NUM_COLUMNS,numColumns);
+            return this;
+        }
+
+        /**
+         * 设置为头像选取模式，设置true将强制将最大选择数量至为1,不显示底部预览布局
+         * @return
+         */
+        public ListOption setAvatarMode(boolean avatarMode){
+            mListBundle.putBoolean(EXTRA_AVATAR_MODE,avatarMode);
+            return this;
+        }
+
+        /**
+         * 设置自动裁剪功能
+         * @param autoCropEnable 设置为true，则会在返回的结果中全部进行自动裁剪,，按照1:1的比例，居中裁剪方形图片
+         * @return
+         */
+        public ListOption setAutoCropEnable(boolean autoCropEnable){
+            mListBundle.putBoolean(EXTRA_AUTO_CROP_ENABLE,autoCropEnable);
             return this;
         }
 
@@ -191,10 +213,23 @@ public class Photo {
             mListIntent.putExtras(mListBundle);
             return mListIntent;
         }
+
+        /**
+         * 获取图片选择列表返回的图片数据
+         * @param intent
+         * @return
+         */
+        public static ArrayList<String> getData(Intent intent){
+            ArrayList<String> data = new ArrayList<>();
+            if(intent != null){
+                data = intent.getStringArrayListExtra(EXTRA_SELECTOR_LIST_RESULT);
+            }
+            return data;
+        }
     }
 
 
-    @IntDef({MODE_OPTION,MODE_CHECK})
+    @IntDef({MODE_OPTION, MODE_PREVIEW})
     public @interface Mode{
     }
     /**
@@ -203,9 +238,9 @@ public class Photo {
     public static final int MODE_OPTION = 1;
 
     /**
-     * 查看模式，可启用大图的删除功能
+     * 预览模式，可启用大图的删除功能
      * */
-    public static final int MODE_CHECK = 2;
+    public static final int MODE_PREVIEW = 2;
 
     public static class PreviewOptin {
 
@@ -217,6 +252,7 @@ public class Photo {
         public static final String EXTRA_CURRENT_POSITOIN = "extra_current_position";
         public static final String EXTRA_FOLDER_NAME = "extra_folder_name";
         public static final String EXTRA_PATHS = "extra_paths";
+        public static final String EXTRA_PREVIEW_RESULT = "extra_preview_result";
 
 
         private Bundle mPreviewBundle;
@@ -287,7 +323,7 @@ public class Photo {
         }
 
         /**
-         * 是否可删除，只要模式为{@link #MODE_CHECK}才有效
+         * 是否可删除，只要模式为{@link #MODE_PREVIEW}才有效
          */
         public PreviewOptin canDelete(boolean canDelete){
             mPreviewBundle.putBoolean(EXTRA_CAN_DELETE,canDelete);
@@ -347,6 +383,14 @@ public class Photo {
             mBigImgIntent.setClass(context,PreviewPhotoActivity.class);
             mBigImgIntent.putExtras(mPreviewBundle);
             return mBigImgIntent;
+        }
+
+        public static ArrayList<String> getData(Intent intent){
+            ArrayList<String> data = new ArrayList<>();
+            if(intent != null){
+                data = intent.getStringArrayListExtra(EXTRA_PREVIEW_RESULT);
+            }
+            return data;
         }
     }
 

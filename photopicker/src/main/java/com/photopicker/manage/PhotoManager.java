@@ -34,7 +34,6 @@ import java.util.concurrent.Executors;
 public class PhotoManager implements Handler.Callback {
     private static final String TAG = "PhotoManager";
     private static final int LOAD_ALL_IMG = 10;
-    private static final int SHOW_IMG = 11;
     private static final int RESULT = 12;
 
     /**
@@ -45,7 +44,14 @@ public class PhotoManager implements Handler.Callback {
     /**
      * 已选择的图片路径
      */
-    private Vector<String> mSelectedImgs = new Vector<>();
+    private Vector<String> mSelectedPaths = new Vector<>();
+
+    /**
+     * 已选择的图片对象
+     */
+    private Vector<Images> mSelectedImgs = new Vector<>();
+
+
 
     private List<Folder> mFolders;
     private static ExecutorService executorService;
@@ -182,7 +188,7 @@ public class PhotoManager implements Handler.Callback {
 
     public void loadImage(final ImageView imageView, final String path){
         if(mPhotoLoader != null){
-            //如果对于的路径有裁剪过的图片，则显示裁剪过的图片
+            //如果图片的路径有裁剪过的图片，则显示裁剪过的图片
             String cropPath = mCropPaths.get(path);
             if(!TextUtils.isEmpty(cropPath)){
                 mPhotoLoader.load(imageView, cropPath);
@@ -211,34 +217,68 @@ public class PhotoManager implements Handler.Callback {
     }
 
     public int getSelectedCount(){
-        return mSelectedImgs.size();
+        return mSelectedPaths.size();
     }
 
-    public List<String> getSelectedImgs(){
-        return mSelectedImgs;
+    public List<String> getSelectedPaths(){
+        return mSelectedPaths;
     }
 
     public Map<String,String> getCropPaths(){
         return mCropPaths;
     }
 
+    public List<Images> getSelectedImgs(){
+        return mSelectedImgs;
+    }
+
     /**
-     * 选择一张图片路径
-     * @param path
+     * 选择一张图片
+     * @param images
      */
-    public void selector(String path){
-        if(!TextUtils.isEmpty(path) && !mSelectedImgs.contains(path)){
-            mSelectedImgs.add(path);
+    public void selector(Images images){
+        if(images != null){
+            String path = images.getImgPath();
+            if(!TextUtils.isEmpty(path) && !mSelectedPaths.contains(path)){
+                mSelectedPaths.add(path);
+            }
+            if(!mSelectedImgs.contains(images)) {
+                mSelectedImgs.add(images);
+            }
         }
     }
 
     /**
-     * 取消选择一张图片路径
-     * @param path
+     * 取消选择一张图片
+     * @param images
      */
-    public void cancelSelector(String path){
-        if(!TextUtils.isEmpty(path) && mSelectedImgs.contains(path)){
-            mSelectedImgs.remove(path);
+    public void cancelSelector(Images images){
+        if(images != null){
+            String path = images.getImgPath();
+            if(!TextUtils.isEmpty(path) && mSelectedPaths.contains(path)){
+                mSelectedPaths.remove(path);
+            }
+            if(mSelectedImgs.contains(images)) {
+                mSelectedImgs.remove(images);
+            }
+        }
+
+//        cancelSelector(images,true);
+    }
+
+    /**
+     * 取消选择一张图片
+     * @param images
+     */
+    public void cancelSelector(Images images,boolean deleteSelectedImage){
+        if(images != null){
+            String path = images.getImgPath();
+            if(!TextUtils.isEmpty(path) && mSelectedPaths.contains(path)){
+                mSelectedPaths.remove(path);
+            }
+            if(deleteSelectedImage && mSelectedImgs.contains(images)) {
+                mSelectedImgs.remove(images);
+            }
         }
     }
 
@@ -259,17 +299,20 @@ public class PhotoManager implements Handler.Callback {
      * @param cropOutDirectoryPath 裁剪之后的图片存放的目录
      * @param resultCallBack
      */
-    public void getResult(Context context, final String cropOutDirectoryPath, final ResultCallBack resultCallBack){
+    public void getCropAllResult(Context context, final String cropOutDirectoryPath, final ResultCallBack resultCallBack){
         final WeakReference<Context> contextWeakReference = new WeakReference<>(context);
         addTask(new Runnable() {
             @Override
             public void run() {
-                List<String> result = new ArrayList<>();
-                for (String selectedImg : mSelectedImgs) {
+                ArrayList<String> result = new ArrayList<>();
+                for (String selectedImg : mSelectedPaths) {
                     String cropPath = mCropPaths.get(selectedImg);
                     if(TextUtils.isEmpty(cropPath)){
                         Context context = contextWeakReference.get();
-                        if(context == null) return;
+                        if(context == null){
+                            setCropAllResult(result,resultCallBack);
+                            return;
+                        }
 
                         String outPath = cropOutDirectoryPath+"/"+System.currentTimeMillis() + ".jpg";
                         PhotoUtil.autoCrop(context,selectedImg,outPath);
@@ -285,17 +328,37 @@ public class PhotoManager implements Handler.Callback {
                     }
                 }
 
-                if (mHandler != null) {
-                    MessageBean messageBean = new MessageBean();
-                    messageBean.resultCallBack = resultCallBack;
-                    messageBean.result = result;
-                    Message msg = mHandler.obtainMessage(RESULT, messageBean);
-                    mHandler.sendMessage(msg);
-                }
+                setCropAllResult(result,resultCallBack);
             }
         });
     }
 
+    private void setCropAllResult(ArrayList<String> result, ResultCallBack resultCallBack){
+        if (mHandler != null) {
+            MessageBean messageBean = new MessageBean();
+            messageBean.resultCallBack = resultCallBack;
+            messageBean.result = result;
+            Message msg = mHandler.obtainMessage(RESULT, messageBean);
+            mHandler.sendMessage(msg);
+        }
+    }
+
+    /**
+     * 获取选择的结果
+     * @return
+     */
+    public ArrayList<String>  getResult(){
+        ArrayList<String> result = new ArrayList<>();
+        for (String selectedImg : mSelectedPaths) {
+            String cropPath = mCropPaths.get(selectedImg);
+            if(!TextUtils.isEmpty(cropPath)){
+                result.add(cropPath);
+            }else {
+                result.add(selectedImg);
+            }
+        }
+        return result;
+    }
 
 
     public interface LoadAllImgCallBack{
@@ -308,11 +371,11 @@ public class PhotoManager implements Handler.Callback {
         List<Folder> folders;
         
         ResultCallBack resultCallBack;
-        List<String> result;
+        ArrayList<String> result;
     }
 
     public interface ResultCallBack{
-        void callback(List<String> result);
+        void callback(ArrayList<String> result);
     }
 
     /**

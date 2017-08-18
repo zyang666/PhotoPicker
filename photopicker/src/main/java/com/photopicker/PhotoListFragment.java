@@ -1,6 +1,7 @@
 package com.photopicker;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
@@ -26,7 +27,10 @@ import com.photopicker.util.PermissionsUtil;
 import com.photopicker.util.PhotoUtil;
 import com.photopicker.widget.FolderPopupWindow;
 import com.photopicker.widget.PhotoListView;
+import com.yalantis.ucrop.util.FileUtils;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,7 +43,10 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
 
 
     private static final int REQUEST_CODE_CAMERA_PERMISSIONS = 0;
+
+    private static final int REQUEST_CODE_CROP_IMAGE = 0x12;
     private static final int REQUSET_CAMERA = 0x13;
+    private static final int REQUEST_CODE_PREVIEW = 0x14;
 
     private ImageView mArrows;
     private TextView mTitle;
@@ -55,21 +62,31 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
     private FolderPopupWindow mPopupWindow;
     private TextView mTvBottomPreview;
     private Bundle mCropOptionBundle;
-    private String mBucketName;
+    private String mFolderName = "所有图片";
+    private boolean mAvatarMode;
+    private boolean isFrist = true;
+    private boolean mAutoCropEnable;
 
     @Override
     protected void init() {
         Bundle bundle = getArguments();
         if(bundle!= null){
-            mMaxSelectorCount = bundle.getInt(Photo.ListOption.EXTRA_MAX_SELECTOR_COUNT, 0);
-            mNeedCrop = bundle.getBoolean(Photo.ListOption.EXTRA_NEED_CROP, false);
-            mNeedCamera = bundle.getBoolean(Photo.ListOption.EXTRA_NEED_CAMERA, true);
+            mAutoCropEnable = bundle.getBoolean(Photo.ListOption.EXTRA_AUTO_CROP_ENABLE, false);
+            mAvatarMode = bundle.getBoolean(Photo.ListOption.EXTRA_AVATAR_MODE, false);
+            mNeedCamera = bundle.getBoolean(Photo.ListOption.EXTRA_NEED_CAMERA, false);
+            mNeedCrop = bundle.getBoolean(Photo.ListOption.EXTRA_NEED_CROP, true);
             mShowBottomLayout = bundle.getBoolean(Photo.ListOption.EXTRA_SHOW_BOTTOM_LAYOUT, true);
             mCameraUri = bundle.getParcelable(Photo.ListOption.EXTRA_CAMERA_URI);
             mCropOptionBundle = bundle.getBundle(Photo.ListOption.EXTRA_CROP_OPTION_BUNDLE);
+            mMaxSelectorCount = bundle.getInt(Photo.ListOption.EXTRA_MAX_SELECTOR_COUNT, 1);
             int gridNumColumns = bundle.getInt(Photo.ListOption.EXTRA_GRID_NUM_COLUMNS);
             if(gridNumColumns > 1){
                 mPhotoListView.setNumColumns(gridNumColumns);
+            }
+
+            if(mAvatarMode){//选择头像模式，强制将最大数量设置为1
+                mMaxSelectorCount = 1;
+
             }
         }
 
@@ -84,22 +101,33 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
             @Override
             public void onDismiss() {
                 mOverrideView.setVisibility(View.GONE);
-                mCompleted.setVisibility(View.VISIBLE);
+                if(!mAvatarMode) {
+                    mCompleted.setVisibility(View.VISIBLE);
+                }
                 startArrowsAnimation(180, 0);
             }
         });
 
         //选择文件夹
         mPopupWindow.setOnBucketClickListener(new FolderPopupWindow.OnBucketClickListener() {
-
             @Override
             public void bucketClick(final String bucketName) {
-                mBucketName = bucketName;
+                mFolderName = bucketName;
                 loadImgFromFolderName(bucketName,true);
                 mTitle.setText(bucketName);
                 updateCountText();
             }
         });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(!isFrist){
+            loadImgFromFolderName(mFolderName,false);
+            updateCountText();
+        }
+        isFrist = false;
     }
 
     @Override
@@ -114,24 +142,30 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
         cancel.setOnClickListener(this);
         mTitleContainer.setOnClickListener(this);
         mCompleted.setOnClickListener(this);
-//        updateCountText();
+        if(mAvatarMode){
+            mCompleted.setVisibility(View.GONE);
+        }
         return mToolbar;
     }
 
     @Override
     protected void firstLoadDataSuccess(List<Folder> data) {
         mPopupWindow.setData(data);
+        if(data != null && data.size() > 0 && data.get(0) != null){
+            mFolderName = data.get(0).getFolderName();
+        }
     }
 
     @Override
     protected boolean showBottomLayout() {
-        return mShowBottomLayout;
+        return mShowBottomLayout && !mAvatarMode;
     }
 
     @Override
     protected View getBottomView() {
         View bottomView = View.inflate(getContext(), R.layout.layout_photo_list_bottom, null);
         mTvBottomPreview = (TextView) bottomView.findViewById(R.id.tv_bottom_preview);
+        mTvBottomPreview.setOnClickListener(this);
         return bottomView;
     }
 
@@ -157,11 +191,20 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
             //点击的是相机item，打开相机
             startCamera();
         }else {
-            //进入裁剪的前提条件满足，进入裁剪，否则进入查看大图页面
-            if (mMaxSelectorCount == 1 && mNeedCrop) {
-                startCropActivity(position);
+            //是选择头像模式，并且需要裁剪，则进入裁剪页面
+            if (mAvatarMode && mNeedCrop) {
+                Images iamg = mPhotoListView.getImages(position);
+                if (iamg != null) {
+                    String path = iamg.getImgPath();
+                    Uri inputUri = Uri.fromFile(new File(path));
+                    startCropActivity(inputUri);
+                } else {
+                    PhotoUtil.showShortToast(getContext(),"没找到对应的图片");
+                }
             } else {
-                startPreviewPhotoActivity(position);
+//                startPreviewPhotoActivity(position);
+
+                startPreviewPhotoActivity(Photo.MODE_OPTION,mPhotoListView.getRealPos(position));
             }
         }
     }
@@ -173,32 +216,48 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
     /**
      * 启动预览大图界面
      */
-    private void startPreviewPhotoActivity(int position){
-        Photo.PreviewOptin previewOptin = Photo.createPreviewOptin(null);
+    /*private void startPreviewPhotoActivity(int position){
+        *//*Photo.PreviewOptin previewOptin = Photo.createPreviewOptin(null);
         previewOptin.setMode(Photo.MODE_OPTION)
                 .canCrop(mNeedCrop)
                 .setMaxSelectorCount(mMaxSelectorCount)
-                .setFolderName(mBucketName)
+                .setFolderName(mFolderName)
                 .setCurrentPosition(mPhotoListView.getRealPos(position));
 
         dealBundle(previewOptin);
-        previewOptin.start(getContext());
+        previewOptin.start(this, REQUEST_CODE_PREVIEW);*//*
+
+        startPreviewPhotoActivity(Photo.MODE_OPTION,mPhotoListView.getRealPos(position));
+    }*/
+
+    /**
+     * 启动预览大图界面
+     */
+    private void startPreviewPhotoActivity(int mode,int position){
+        Photo.PreviewOptin previewOptin = Photo.createPreviewOptin(null);
+        previewOptin.setMode(mode)
+                .canCrop(mNeedCrop)
+                .setMaxSelectorCount(mMaxSelectorCount)
+                .setFolderName(mFolderName)
+                .setCurrentPosition(position);
+        previewOptin.getPreviewBundle().putBoolean(Photo.ListOption.EXTRA_AUTO_CROP_ENABLE,mAutoCropEnable);
+        dealBundle(previewOptin);
+        previewOptin.start(this, REQUEST_CODE_PREVIEW);
     }
 
     /**
      * 启动裁剪界面
-     * @param position
+     * @param inputUri
      */
-    private void startCropActivity(int position){
-        Images iamg = mPhotoListView.getImages(position);
-        if (iamg != null) {
-            String path = iamg.getImgPath();
-            // 去裁剪
-//                    startCropActivity(path);
-
-        } else {
-            PhotoUtil.showShortToast(getContext(),"没找到对应的图片");
+    private void startCropActivity(Uri inputUri){
+        String destinationFileName = "PhotoPickerCrop" + System.currentTimeMillis() + ".jpg";
+        Uri outputUri = Uri.fromFile(new File(getContext().getCacheDir(), destinationFileName));
+        Photo.CropOption cropOption = Photo.createCropOption(inputUri, outputUri)
+                .setAspectRatio(1, 1);
+        if (mCropOptionBundle != null) {
+            cropOption.getBundle().putAll(mCropOptionBundle);
         }
+        cropOption.start(this, REQUEST_CODE_CROP_IMAGE);
     }
 
     /**
@@ -270,20 +329,43 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
             startArrowsAnimation(0, 180);
 
         }else if(id == R.id.completed){//完成
-            showNoCancelLoading();
-            PhotoManager.get().getResult(
-                    getContext(),
-                    getContext().getCacheDir().getAbsolutePath(),
-                    new PhotoManager.ResultCallBack() {
-                        @Override
-                        public void callback(List<String> result) {
-                            hideNoCancelLoading();
-                            if(result == null) return;
-                            Log.d(TAG, "callback: result="+result.toString());
-                            getActivity().finish();
-                        }
-                    });
+            completed();
+        }else if(id == R.id.tv_bottom_preview){//预览
+            startPreviewPhotoActivity(Photo.MODE_OPTION & Photo.MODE_PREVIEW,0);
         }
+    }
+
+    /**
+     * 完成
+     */
+    private void completed(){
+        showNoCancelLoading();
+        if(!mAutoCropEnable){
+            ArrayList<String> result = PhotoManager.get().getResult();
+            Log.d(TAG, "completed: result="+result.toString());
+            setPhotoResult(result);
+            return;
+        }
+        PhotoManager.get().getCropAllResult(
+                getContext(),
+                getContext().getCacheDir().getAbsolutePath(),
+                new PhotoManager.ResultCallBack() {
+                    @Override
+                    public void callback(ArrayList<String> result) {
+                        hideNoCancelLoading();
+                        setPhotoResult(result);
+                        Log.d(TAG, "callback: result="+result);
+                    }
+                });
+
+    }
+
+    private void setPhotoResult(ArrayList<String> result){
+        hideNoCancelLoading();
+        Intent intent = new Intent();
+        intent.putStringArrayListExtra(Photo.ListOption.EXTRA_SELECTOR_LIST_RESULT,result);
+        getActivity().setResult(Activity.RESULT_OK,intent);
+        getActivity().finish();
     }
 
     private void startArrowsAnimation(float fromDegrees, float toDegrees) {
@@ -299,13 +381,6 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-
-    }
-
-    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_CAMERA_PERMISSIONS) {//申请相机权限回调
@@ -316,6 +391,40 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
                 PhotoUtil.showShortToast(getContext(),"没有相机权限，无法进入相机拍照！");
             }
         }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_PREVIEW) {//查看大图回来
+            if (resultCode == Activity.RESULT_OK) { //选择完成
+                ArrayList<String> result = Photo.PreviewOptin.getData(data);
+                setPhotoResult(result);
+            }
+
+        }else if(requestCode == REQUEST_CODE_CROP_IMAGE){//裁剪回来
+            if (resultCode == Activity.RESULT_OK) {
+                Uri cropResultUri = Photo.CropOption.getResult(data);
+                Log.d(TAG, "onActivityResult: cropResultUri="+cropResultUri);
+                Log.d(TAG, "onActivityResult: cropResultUri.getPath="+cropResultUri.getPath());
+                ArrayList<String> cropResult = new ArrayList<>();
+                cropResult.add(cropResultUri.getPath());
+                setPhotoResult(cropResult);
+            }
+
+        }else if (requestCode == REQUSET_CAMERA) {//照相机回来
+            if (resultCode == Activity.RESULT_OK) {
+                if(mNeedCrop || mAvatarMode){
+                    startCropActivity(mCameraUri);
+                }else {
+                    String path = FileUtils.getPath(getContext(), mCameraUri);
+                    Log.d(TAG, "onActivityResult: uri="+mCameraUri);
+                    Log.d(TAG, "onActivityResult: path="+path);
+//                    setPhotoResult(null);
+                }
+            }
+        }
+
     }
 
     //--------------------------------- view holder ------------------------------------------------
@@ -330,6 +439,9 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
             mItemIcon = (ImageView) itemView.findViewById(R.id.item_icon);
             mSelectorIcon = (ImageView) itemView.findViewById(R.id.selector_icon);
             mCoverView = itemView.findViewById(R.id.cover_view);
+            if(mAvatarMode){
+                mSelectorIcon.setVisibility(View.GONE);
+            }
         }
 
         @Override
@@ -355,11 +467,11 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
                     if (mSelectorIcon.isSelected()) {
                         images.setSelector(true);
                         mCoverView.setVisibility(View.VISIBLE);
-                        PhotoManager.get().selector(images.getImgPath());
+                        PhotoManager.get().selector(images);
                     } else {
                         images.setSelector(false);
                         mCoverView.setVisibility(View.GONE);
-                        PhotoManager.get().cancelSelector(images.getImgPath());
+                        PhotoManager.get().cancelSelector(images);
                     }
                     updateCountText();
                 }

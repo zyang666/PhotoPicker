@@ -1,26 +1,31 @@
 package com.photopicker;
 
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.photopicker.base.BaseActivity;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
 import com.photopicker.util.PhotoUtil;
+import com.photopicker.widget.HorizontalRecyclerView;
 import com.photopicker.widget.PreviewPhotoViewPager;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by zhangyang on 2017/8/4.
@@ -28,10 +33,13 @@ import java.util.ArrayList;
  * 预览大图
  */
 
-public class PreviewPhotoActivity extends AppCompatActivity implements View.OnClickListener {
+public class PreviewPhotoActivity extends BaseActivity implements View.OnClickListener {
+    private static final String TAG = "PreviewPhotoActivity";
+
+    private static final int REQUEST_CODE_CROP_IMAGE = 0x01;
 
     private TextView mSelectIcon;
-    private RelativeLayout mBottomBar;
+    private LinearLayout mBottomBar;
     private FrameLayout mCancel;
     private ImageView mIvDelete;
     private TextView mTitle;
@@ -40,6 +48,10 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
     private PreviewPhotoViewPager mPreviewViewPager;
     private int mMaxSelectorCount;
     private TextView mTvEdit;
+    private boolean mAutoCropEnable;
+    private Bundle mCropOptionBundle;
+    private String mCropSrcPath;
+    private HorizontalRecyclerView mHorizontalView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,14 +67,16 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
 
     private void initView() {
         mPreviewViewPager = (PreviewPhotoViewPager) findViewById(R.id.view_pager);
+        mHorizontalView = (HorizontalRecyclerView) findViewById(R.id.horizontal_view);
         mSelectIcon = (TextView) findViewById(R.id.select_icon);
         mTvEdit = (TextView) findViewById(R.id.tv_edit);
         mTitle = (TextView) findViewById(R.id.title);
         mCompleted = (TextView) findViewById(R.id.completed);
-        mBottomBar = (RelativeLayout) findViewById(R.id.bottom_bar);
+        mBottomBar = (LinearLayout) findViewById(R.id.bottom_bar);
         mCancel = (FrameLayout) findViewById(R.id.cancel);
         mIvDelete = (ImageView) findViewById(R.id.iv_delete);
         mToolBar = (Toolbar) findViewById(R.id.tool_bar);
+        mHorizontalView.setData(PhotoManager.get().getSelectedImgs());
 
         processIntent();
         updateTitle();
@@ -72,11 +86,13 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
     private void processIntent() {
         Intent intent = getIntent();
         if(intent != null){
+            mAutoCropEnable = intent.getBooleanExtra(Photo.ListOption.EXTRA_AUTO_CROP_ENABLE, false);
             mMaxSelectorCount = intent.getIntExtra(Photo.PreviewOptin.EXTRA_MAX_SELECTOR_COUNT, 1);
+            mCropOptionBundle = intent.getBundleExtra(Photo.PreviewOptin.EXTRA_CROP_OPTION_BUNDLE);
+            int mode = intent.getIntExtra(Photo.PreviewOptin.EXTRA_MODE, Photo.MODE_PREVIEW);
+            int currentPos = intent.getIntExtra(Photo.PreviewOptin.EXTRA_CURRENT_POSITOIN, 0);
             boolean canCrop = intent.getBooleanExtra(Photo.PreviewOptin.EXTRA_CAN_CROP, false);
             boolean canDelete = intent.getBooleanExtra(Photo.PreviewOptin.EXTRA_CAN_DELETE, false);
-            int mode = intent.getIntExtra(Photo.PreviewOptin.EXTRA_MODE, Photo.MODE_CHECK);
-            int currentPos = intent.getIntExtra(Photo.PreviewOptin.EXTRA_CURRENT_POSITOIN, 0);
             ArrayList<String> paths = intent.getStringArrayListExtra(Photo.PreviewOptin.EXTRA_PATHS);
 
             mTvEdit.setVisibility(canCrop ? View.VISIBLE : View.GONE);
@@ -86,11 +102,30 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
                 mPreviewViewPager.setData(PhotoManager.get().getImgFromFolder(folderName));
                 mIvDelete.setVisibility(View.GONE);
                 mCompleted.setVisibility(View.VISIBLE);
+
+            }else if(mode == (Photo.MODE_OPTION & Photo.MODE_PREVIEW)){
+                mPreviewViewPager.setData(PhotoManager.get().getSelectedImgs());
+                mIvDelete.setVisibility(View.GONE);
+                mCompleted.setVisibility(View.VISIBLE);
+
             }else {
                 mPreviewViewPager.setPaths(paths);
                 mBottomBar.setVisibility(View.GONE);
             }
+            if(mMaxSelectorCount <= 1){
+                mSelectIcon.setVisibility(View.GONE);
+            }
+
+            //当不需要裁剪（不显示“编辑”）和不显示“选择”按钮时，隐藏底部布局
+            if(mSelectIcon.getVisibility() == View.GONE && mTvEdit.getVisibility() == View.GONE){
+                mBottomBar.setVisibility(View.GONE);
+            }
+
             mPreviewViewPager.setCurrentItem(currentPos);
+            Images item = mPreviewViewPager.getItem(currentPos);
+            if(item != null){
+                mHorizontalView.setCurrentImage(item);
+            }
         }
     }
 
@@ -115,9 +150,11 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
         mPreviewViewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
+                Log.d(TAG, "onPageSelected: positiong="+position);
                 Images item = mPreviewViewPager.getItem(position);
                 if (item != null) {
                     mSelectIcon.setSelected(item.isSelector());
+                    mHorizontalView.setCurrentImage(item);
                 }
                 updateTitle();
             }
@@ -130,16 +167,27 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
                 hideOrShowBottomBar(150);
             }
         });
+
+        mHorizontalView.setOnItemClickListener(new HorizontalRecyclerView.OnItemClickListener() {
+            @Override
+            public void click(Images image) {
+                List<Images> currentImages = mPreviewViewPager.getCurrentImages();
+                if(currentImages != null && currentImages.contains(image)){
+                    int pos = currentImages.indexOf(image);
+                    mPreviewViewPager.setCurrentItem(pos,false);
+                }
+            }
+        });
     }
 
     private void updateTitle(){
-        //postion是从0开始的，这里加个1
+        //position是从0开始的，这里加个1
         mTitle.setText((mPreviewViewPager.getCurrentItem() + 1) + "/" +mPreviewViewPager.getMaxCount());
     }
 
     private void updateSelectedCount(){
         int selectorCount = PhotoManager.get().getSelectedCount();
-        if(selectorCount > 0){
+        if(selectorCount > 0 || mMaxSelectorCount <= 1){
             mCompleted.setEnabled(true);
         }else {
             mCompleted.setEnabled(false);
@@ -200,11 +248,10 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
     public void onClick(View v) {
         int id = v.getId();
         if(id == R.id.cancel){//返回
-//            setResult1(RESULT_OK);
             finish();
 
         }else  if(id == R.id.completed){//完成/上传
-//            completed();
+            completed();
 
         }else if(id == R.id.iv_delete){//删除
 //            delete();
@@ -214,8 +261,58 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
             updateSelectedCount();
 
         }else if(id == R.id.tv_edit){//编辑
-
+            Images images = mPreviewViewPager.getItem(mPreviewViewPager.getCurrentItem());
+            mCropSrcPath = images.getImgPath();
+            startCropActivity(Uri.fromFile(new File(mCropSrcPath)));
         }
+    }
+
+    /**
+     * 启动裁剪界面
+     * @param inputUri
+     */
+    private void startCropActivity(Uri inputUri){
+        String destinationFileName = "PhotoPickerCrop" + System.currentTimeMillis() + ".jpg";
+        Uri outputUri = Uri.fromFile(new File(getCacheDir(), destinationFileName));
+        Photo.CropOption cropOption = Photo.createCropOption(inputUri, outputUri)
+                .setAspectRatio(1, 1);
+        if (mCropOptionBundle != null) {
+            cropOption.getBundle().putAll(mCropOptionBundle);
+        }
+        cropOption.start(this, REQUEST_CODE_CROP_IMAGE);
+    }
+
+    /**
+     * 完成
+     */
+    private void completed(){
+        showNoCancelLoading();
+        if(!mAutoCropEnable){
+            ArrayList<String> result = PhotoManager.get().getResult();
+            Log.d(TAG, "completed: result="+result.toString());
+            setPhotoResult(result);
+            return;
+        }
+        PhotoManager.get().getCropAllResult(
+                getBaseContext(),
+                getBaseContext().getCacheDir().getAbsolutePath(),
+                new PhotoManager.ResultCallBack() {
+                    @Override
+                    public void callback(ArrayList<String> result) {
+                        hideNoCancelLoading();
+                        setPhotoResult(result);
+                        Log.d(TAG, "callback: result="+result);
+                    }
+                });
+
+    }
+
+    private void setPhotoResult(ArrayList<String> result){
+        hideNoCancelLoading();
+        Intent intent = new Intent();
+        intent.putStringArrayListExtra(Photo.PreviewOptin.EXTRA_PREVIEW_RESULT,result);
+        setResult(Activity.RESULT_OK,intent);
+        finish();
     }
 
     /**
@@ -231,11 +328,26 @@ public class PreviewPhotoActivity extends AppCompatActivity implements View.OnCl
         Images item = mPreviewViewPager.getItem(mPreviewViewPager.getCurrentItem());
         if (item != null) {
             item.setSelector(mSelectIcon.isSelected());
-            String path = item.getImgPath();
             if (mSelectIcon.isSelected()) {//选择
-                PhotoManager.get().selector(path);
+                PhotoManager.get().selector(item);
+                mHorizontalView.add(item);
             } else {//取消选择
-                PhotoManager.get().cancelSelector(path);
+                PhotoManager.get().cancelSelector(item);
+                mHorizontalView.delete(item);
+            }
+        }
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == REQUEST_CODE_CROP_IMAGE){//裁剪回来
+            if (resultCode == Activity.RESULT_OK) {
+                Uri cropResultUri = Photo.CropOption.getResult(data);
+                Log.d(TAG, "onActivityResult: cropResultUri="+cropResultUri);
+                PhotoManager.get().getCropPaths().put(mCropSrcPath,cropResultUri.getPath());
+                mPreviewViewPager.notifyDataSetChanged();
             }
         }
     }
