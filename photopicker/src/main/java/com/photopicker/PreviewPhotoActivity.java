@@ -9,9 +9,9 @@ import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -19,13 +19,16 @@ import android.widget.TextView;
 import com.photopicker.base.BaseActivity;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
+import com.photopicker.util.FileUtil;
 import com.photopicker.util.PhotoUtil;
+import com.photopicker.util.StatusBarUtil;
 import com.photopicker.widget.HorizontalRecyclerView;
 import com.photopicker.widget.PreviewPhotoViewPager;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by zhangyang on 2017/8/4.
@@ -44,7 +47,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
     private ImageView mIvDelete;
     private TextView mTitle;
     private TextView mCompleted;
-    private Toolbar mToolBar;
+    private View mToolBar;
     private PreviewPhotoViewPager mPreviewViewPager;
     private int mMaxSelectorCount;
     private TextView mTvEdit;
@@ -57,6 +60,8 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_image);
+        StatusBarUtil.setTransparentForImageViewInFragment(this,null);
+
 
         initView();
 
@@ -75,7 +80,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
         mBottomBar = (LinearLayout) findViewById(R.id.bottom_bar);
         mCancel = findViewById(R.id.cancel);
         mIvDelete = (ImageView) findViewById(R.id.iv_delete);
-        mToolBar = (Toolbar) findViewById(R.id.tool_bar);
+        mToolBar = findViewById(R.id.tool_bar);
         mHorizontalView.setData(PhotoManager.get().getSelectedImgs());
 
         processIntent();
@@ -221,7 +226,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
     }
 
 
-    /*@Override
+    @Override
     protected void onResume() {
         super.onResume();
         mBottomBar.measure(0,0);
@@ -235,7 +240,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
                 hideOrShowBottomBar(200);
             }
         },300);
-    }*/
+    }
 
 
 
@@ -267,8 +272,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
      * @param inputUri
      */
     private void startCropActivity(Uri inputUri){
-        String destinationFileName = "PhotoPickerCrop" + System.currentTimeMillis() + ".jpg";
-        Uri outputUri = Uri.fromFile(new File(getCacheDir(), destinationFileName));
+        Uri outputUri = Uri.fromFile(FileUtil.getCropFile(this,".jpg"));
         Photo.CropOption cropOption = Photo.createCropOption(inputUri, outputUri)
                 .setAspectRatio(1, 1);
         if (mCropOptionBundle != null) {
@@ -288,18 +292,23 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
             Images item = mPreviewViewPager.getItem(mPreviewViewPager.getCurrentItem());
             if(item != null){
                 String inputPath = item.getImgPath();
+                Map<String, String> cropPaths = PhotoManager.get().getCropPaths();
+                String cropPath = cropPaths.get(inputPath);
 
                 if(mAutoCropEnable){//需要自动裁剪
-                    String outPath = getCacheDir().getAbsolutePath()+"/"+System.currentTimeMillis() + ".jpg";
-                    PhotoUtil.autoCrop(this,inputPath,outPath);
-                    File file = new File(outPath);
-                    if (file.exists()) {
-                        result.add(outPath);
+                    if(!TextUtils.isEmpty(cropPath)){//当前图片已经裁剪，就不需要重复裁剪了
+                        result.add(cropPath);
                     }else {
-                        Log.e(TAG, "onClick: 裁剪失败，inputPath="+inputPath);
-                        result.add(inputPath);
+                        String outPath = getCacheDir().getAbsolutePath() + "/" + System.currentTimeMillis() + ".jpg";
+                        PhotoUtil.autoCrop(this, inputPath, outPath);
+                        File file = new File(outPath);
+                        if (file.exists()) {
+                            result.add(outPath);
+                        } else {
+                            Log.e(TAG, "onClick: 裁剪失败，inputPath=" + inputPath);
+                            result.add(inputPath);
+                        }
                     }
-
                 }else {
                     result.add(inputPath);
                 }

@@ -9,19 +9,17 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.view.WindowManager;
 
 import com.photopicker.base.BaseActivity;
+import com.yalantis.ucrop.view.CropView;
 import com.yalantis.ucrop.callback.BitmapCropCallback;
 import com.yalantis.ucrop.view.CropImageView;
 import com.yalantis.ucrop.view.GestureCropImageView;
 import com.yalantis.ucrop.view.OverlayView;
-import com.yalantis.ucrop.view.UCropView;
 
 /**
  * Created by zhangyang on 2017/8/4.
@@ -40,7 +38,7 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
     private Bitmap.CompressFormat mCompressFormat = DEFAULT_COMPRESS_FORMAT;
     private int mCompressQuality = DEFAULT_COMPRESS_QUALITY;
 
-    private UCropView mUcropView;
+    private CropView mCropView;
     private View mRotate;
     private View mCrop;
     private GestureCropImageView mCropImageView;
@@ -51,8 +49,8 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_crop);
-
 
         initView();
         processIntent();
@@ -92,9 +90,10 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
         mCrop.setOnClickListener(this);
 
         mToolBar = (Toolbar) findViewById(R.id.tool_bar);
-        mUcropView = (UCropView) findViewById(R.id.ucropView);
-        mCropImageView = mUcropView.getCropImageView();
-        mOverlayView = mUcropView.getOverlayView();
+        mCropView = (CropView) findViewById(R.id.cropView);
+        mCropImageView = mCropView.getCropImageView();
+        mOverlayView = mCropView.getOverlayView();
+        mOverlayView.setupCropBounds();
     }
 
     private void initOverlayView(Intent intent) {
@@ -139,33 +138,6 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
 
     protected void setResultError(Throwable throwable) {
         setResult(RESULT_ERROR, new Intent().putExtra(EXTRA_ERROR, throwable));
-    }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mToolBar.measure(0,0);
-        hideOrShowToolBar(0);
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                hideOrShowToolBar(200);
-            }
-        },300);
-    }
-
-    /**
-     * 动画隐藏或显示标题栏
-     */
-    private void hideOrShowToolBar(long duration){
-        mToolBar.clearAnimation();
-        float translationY = mToolBar.getTranslationY();
-        float start = translationY;
-        float end = translationY < 0 ? 0 :  -mToolBar.getMeasuredHeight();
-        ObjectAnimator animator = ObjectAnimator.ofFloat(mToolBar, "translationY", start,end);
-        animator.setDuration(duration);
-        animator.start();
     }
 
     @Override

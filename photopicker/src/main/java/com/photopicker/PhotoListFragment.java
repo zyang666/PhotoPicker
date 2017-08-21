@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
@@ -23,6 +24,7 @@ import com.photopicker.base.BasePhotoListFragment;
 import com.photopicker.bean.Folder;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
+import com.photopicker.util.FileUtil;
 import com.photopicker.util.PermissionsUtil;
 import com.photopicker.util.PhotoUtil;
 import com.photopicker.widget.FolderPopupWindow;
@@ -66,6 +68,7 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
     private boolean mAvatarMode;
     private boolean isFrist = true;
     private boolean mAutoCropEnable;
+    private String mCameraSavePath;
 
     @Override
     protected void init() {
@@ -76,7 +79,7 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
             mNeedCamera = bundle.getBoolean(Photo.ListOption.EXTRA_NEED_CAMERA, false);
             mNeedCrop = bundle.getBoolean(Photo.ListOption.EXTRA_NEED_CROP, true);
             mShowBottomLayout = bundle.getBoolean(Photo.ListOption.EXTRA_SHOW_BOTTOM_LAYOUT, true);
-            mCameraUri = bundle.getParcelable(Photo.ListOption.EXTRA_CAMERA_URI);
+//            mCameraUri = bundle.getParcelable(Photo.ListOption.EXTRA_CAMERA_URI);
             mCropOptionBundle = bundle.getBundle(Photo.ListOption.EXTRA_CROP_OPTION_BUNDLE);
             mMaxSelectorCount = bundle.getInt(Photo.ListOption.EXTRA_MAX_SELECTOR_COUNT, 1);
             int gridNumColumns = bundle.getInt(Photo.ListOption.EXTRA_GRID_NUM_COLUMNS);
@@ -215,23 +218,6 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
     /**
      * 启动预览大图界面
      */
-    /*private void startPreviewPhotoActivity(int position){
-        *//*Photo.PreviewOptin previewOptin = Photo.createPreviewOptin(null);
-        previewOptin.setMode(Photo.MODE_OPTION)
-                .canCrop(mNeedCrop)
-                .setMaxSelectorCount(mMaxSelectorCount)
-                .setFolderName(mFolderName)
-                .setCurrentPosition(mPhotoListView.getRealPos(position));
-
-        dealBundle(previewOptin);
-        previewOptin.start(this, REQUEST_CODE_PREVIEW);*//*
-
-        startPreviewPhotoActivity(Photo.MODE_OPTION,mPhotoListView.getRealPos(position));
-    }*/
-
-    /**
-     * 启动预览大图界面
-     */
     private void startPreviewPhotoActivity(int mode,int position){
         Photo.PreviewOptin previewOptin = Photo.createPreviewOptin(null);
         previewOptin.setMode(mode)
@@ -249,8 +235,7 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
      * @param inputUri
      */
     private void startCropActivity(Uri inputUri){
-        String destinationFileName = "PhotoPickerCrop" + System.currentTimeMillis() + ".jpg";
-        Uri outputUri = Uri.fromFile(new File(getContext().getCacheDir(), destinationFileName));
+        Uri outputUri = Uri.fromFile(FileUtil.getCropFile(getContext(),".jpg"));
         Photo.CropOption cropOption = Photo.createCropOption(inputUri, outputUri)
                 .setAspectRatio(1, 1);
         if (mCropOptionBundle != null) {
@@ -263,6 +248,10 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
      * 打开相机
      */
     private void startCamera() {
+        File providerFile = FileUtil.getProviderFile(getContext());
+        mCameraSavePath = providerFile.getAbsolutePath();
+        Log.d(TAG, "startCamera: cameraSavePath="+ mCameraSavePath);
+        mCameraUri = FileUtil.getProviderUri(getContext(), providerFile);
         Intent intent = new Intent();
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); //添加这一句表示对目标应用临时授权该Uri所代表的文件
         intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);//设置Action为拍照
@@ -413,13 +402,18 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
 
         }else if (requestCode == REQUSET_CAMERA) {//照相机回来
             if (resultCode == Activity.RESULT_OK) {
+                if(TextUtils.isEmpty(mCameraSavePath)) return;
+                File file = new File(mCameraSavePath);
+                if(!file.exists()){
+                    return;
+                }
                 if(mNeedCrop || mAvatarMode){
-                    startCropActivity(mCameraUri);
+                    startCropActivity(Uri.fromFile(file));
                 }else {
-                    String path = FileUtils.getPath(getContext(), mCameraUri);
-                    Log.d(TAG, "onActivityResult: uri="+mCameraUri);
-                    Log.d(TAG, "onActivityResult: path="+path);
-//                    setPhotoResult(null);
+                    ArrayList<String> result = new ArrayList<>();
+                    result.add(file.getAbsolutePath());
+                    Log.d(TAG, "onActivityResult: path="+file.getAbsolutePath());
+                    setPhotoResult(result);
                 }
             }
         }

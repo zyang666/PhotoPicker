@@ -5,17 +5,19 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.bm.library.PhotoView;
 import com.photopicker.bean.Images;
 import com.photopicker.manage.PhotoManager;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+
+import uk.co.senab.photoview.PhotoView;
+import uk.co.senab.photoview.PhotoViewAttacher;
+
 
 /**
  * Created by zy on 2017/8/17.
@@ -35,6 +37,25 @@ public class PreviewPhotoViewPager extends ViewPager{
         super(context, attrs);
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        try {
+            return super.onTouchEvent(ev);
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        try {
+            return super.onInterceptTouchEvent(ev);
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
 
     public void setData(List<Images> datas){
         if(mPreviewPhotoAdapter == null) {
@@ -88,7 +109,6 @@ public class PreviewPhotoViewPager extends ViewPager{
      */
 
     class PreviewPhotoAdapter extends PagerAdapter {
-        private static final String TAG = "ShowBigImageAdapter";
         private List<Images> images = new ArrayList<>();
         private List<String> paths;
 
@@ -150,19 +170,16 @@ public class PreviewPhotoViewPager extends ViewPager{
         @Override
         public Object instantiateItem(ViewGroup container, final int position) {
             PhotoView imageView = new PhotoView(container.getContext());
-            imageView.enable();
             String path = "";
             if(paths != null && !paths.isEmpty()){
                 path = paths.get(position);
             }else {
                 path = images.get(position).getImgPath();
             }
-            Log.d(TAG, "instantiateItem: path="+path);
             PhotoManager.get().loadImage(imageView,path);
-
-            imageView.setOnClickListener(new View.OnClickListener() {
+            imageView.setOnPhotoTapListener(new PhotoViewAttacher.OnPhotoTapListener() {
                 @Override
-                public void onClick(View v) {
+                public void onPhotoTap(View view, float x, float y) {
                     if(mItemOnClickListener != null){
                         mItemOnClickListener.onClick(position);
                     }
@@ -172,8 +189,6 @@ public class PreviewPhotoViewPager extends ViewPager{
             return imageView;
         }
     }
-
-
 
     public void setItemOnClickListener(ItemOnClickListener listener) {
         mItemOnClickListener = listener;

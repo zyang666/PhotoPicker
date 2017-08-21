@@ -202,13 +202,6 @@ public class Photo {
         }
 
         private Intent getIntent(Context context) {
-            boolean needCamera = mListBundle.getBoolean(EXTRA_NEED_CAMERA);
-            if(needCamera){
-                Uri cameraUri =mListBundle.getParcelable(EXTRA_CAMERA_URI);
-                if(cameraUri == null){
-                    throw new NullPointerException("camera_uri不能为空，请调用setCameraUri(Uri saveUri)设置相机uri");
-                }
-            }
             mListIntent.setClass(context,PhotoListActivity.class);
             mListIntent.putExtras(mListBundle);
             return mListIntent;

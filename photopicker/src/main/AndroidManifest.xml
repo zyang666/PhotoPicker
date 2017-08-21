@@ -20,6 +20,17 @@
         <activity android:name=".PhotoListActivity"/>
         <activity android:name=".CropActivity"/>
         <activity android:name=".PreviewPhotoActivity"/>
+
+
+        <provider
+            android:authorities="${applicationId}.provider"
+            android:name=".manage.PhotoProvider"
+            android:exported="false"
+            android:grantUriPermissions="true" >
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/photo_picker_provider_paths" />
+        </provider>
     </application>
 
 </manifest>

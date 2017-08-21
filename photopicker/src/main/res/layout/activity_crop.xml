@@ -4,8 +4,8 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-    <com.yalantis.ucrop.view.UCropView
-        android:id="@+id/ucropView"
+    <com.yalantis.ucrop.view.CropView
+        android:id="@+id/cropView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/black"/>

@@ -12,12 +12,14 @@ import android.widget.LinearLayout;
 import com.bumptech.glide.Glide;
 import com.photopicker.Photo;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE = 1;
     private LinearLayout mCoantainer;
+    private ImageView mImgTest;
 
 
     @Override
@@ -30,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initView() {
         mCoantainer = (LinearLayout) findViewById(R.id.container);
+        mImgTest = (ImageView) findViewById(R.id.img_test);
 
         findViewById(R.id.btn_test).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -39,8 +42,7 @@ public class MainActivity extends AppCompatActivity {
                         .setMaxSelectorCount(9)
                         .needCamera(true)
                         .needCrop(true)
-                        .setCameraUri(FileUtil.getProviderUri(getBaseContext(),FileUtil.getProviderFile(getBaseContext())))
-                        .setAutoCropEnable(true)
+                        .setAutoCropEnable(false)
                         .start(MainActivity.this,REQUEST_CODE);
 
 
@@ -63,6 +65,12 @@ public class MainActivity extends AppCompatActivity {
             mCoantainer.removeAllViews();
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+            File file = new File(paths.get(0));
+            Log.e(TAG, "onActivityResult: file="+file.exists() );
+
+//            Glide.with(this).load(paths.get(0)).into(mImgTest);
+
             for (String path : paths) {
                 ImageView imageView = new ImageView(this);
                 layoutParams.setMargins(0,10,0,0);
