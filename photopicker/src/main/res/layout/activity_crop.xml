@@ -1,36 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
+    <com.yalantis.ucrop.view.UCropView
+        android:id="@+id/ucropView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"/>
 
-    <LinearLayout
-        android:layout_alignParentBottom="true"
+    <RelativeLayout
         android:id="@+id/bottom_container"
         android:layout_width="match_parent"
-        android:layout_height="48dp">
-        <Button
-            android:id="@+id/rotate"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:text="旋转"
-            android:layout_height="wrap_content"/>
-        <Button
-            android:id="@+id/crop"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:text="裁剪"
-            android:layout_height="wrap_content"/>
-    </LinearLayout>
-    
-    <com.yalantis.ucrop.view.UCropView
-        android:layout_above="@id/bottom_container"
-        android:id="@+id/ucropView"
-        android:background="@android:color/black"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-    
-    
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:background="#44000000"
+        android:gravity="center_vertical">
 
+        <TextView
+            android:id="@+id/cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:gravity="center_vertical"
+            android:text="取消"
+            android:textColor="@android:color/white"/>
+
+        <TextView
+            android:id="@+id/crop"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:layout_alignParentRight="true"
+            android:text="裁剪"
+            android:textColor="@android:color/white"/>
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/rotate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottom_container"
+        android:paddingBottom="15dp"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:paddingTop="24dp"
+        android:text="旋转"
+        android:textColor="@android:color/white"/>
+
+    <android.support.v7.widget.Toolbar
+        android:visibility="gone"
+        android:id="@+id/tool_bar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:background="@color/colorPrimary">
+
+        <LinearLayout
+            android:id="@+id/tool_bar_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="?attr/actionBarSize">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:scaleType="center"
+                android:src="@drawable/photo_ic_back_up"/>
+
+            <TextView
+                android:id="@+id/title"
+                style="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="10dp"
+                android:text="编辑图片"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
+    </android.support.v7.widget.Toolbar>
 </RelativeLayout>

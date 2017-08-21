@@ -40,7 +40,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
 
     private TextView mSelectIcon;
     private LinearLayout mBottomBar;
-    private FrameLayout mCancel;
+    private View mCancel;
     private ImageView mIvDelete;
     private TextView mTitle;
     private TextView mCompleted;
@@ -73,7 +73,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
         mTitle = (TextView) findViewById(R.id.title);
         mCompleted = (TextView) findViewById(R.id.completed);
         mBottomBar = (LinearLayout) findViewById(R.id.bottom_bar);
-        mCancel = (FrameLayout) findViewById(R.id.cancel);
+        mCancel = findViewById(R.id.cancel);
         mIvDelete = (ImageView) findViewById(R.id.iv_delete);
         mToolBar = (Toolbar) findViewById(R.id.tool_bar);
         mHorizontalView.setData(PhotoManager.get().getSelectedImgs());
@@ -187,11 +187,6 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
 
     private void updateSelectedCount(){
         int selectorCount = PhotoManager.get().getSelectedCount();
-        if(selectorCount > 0 || mMaxSelectorCount <= 1){
-            mCompleted.setEnabled(true);
-        }else {
-            mCompleted.setEnabled(false);
-        }
         if(mMaxSelectorCount > 1 && selectorCount > 0) {
             mCompleted.setText("完成(" + selectorCount + "/" + mMaxSelectorCount + ")");
         }else {
@@ -226,7 +221,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
     }
 
 
-    @Override
+    /*@Override
     protected void onResume() {
         super.onResume();
         mBottomBar.measure(0,0);
@@ -240,7 +235,7 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
                 hideOrShowBottomBar(200);
             }
         },300);
-    }
+    }*/
 
 
 
@@ -287,24 +282,53 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
      */
     private void completed(){
         showNoCancelLoading();
-        if(!mAutoCropEnable){
-            ArrayList<String> result = PhotoManager.get().getResult();
-            Log.d(TAG, "completed: result="+result.toString());
-            setPhotoResult(result);
-            return;
-        }
-        PhotoManager.get().getCropAllResult(
-                getBaseContext(),
-                getBaseContext().getCacheDir().getAbsolutePath(),
-                new PhotoManager.ResultCallBack() {
-                    @Override
-                    public void callback(ArrayList<String> result) {
-                        hideNoCancelLoading();
-                        setPhotoResult(result);
-                        Log.d(TAG, "callback: result="+result);
-                    }
-                });
+        //如果一张都没有选中，点完成就默认选中当前页显示的图片
+        if(PhotoManager.get().getResult().isEmpty()){
+            ArrayList<String> result = new ArrayList<>();
+            Images item = mPreviewViewPager.getItem(mPreviewViewPager.getCurrentItem());
+            if(item != null){
+                String inputPath = item.getImgPath();
 
+                if(mAutoCropEnable){//需要自动裁剪
+                    String outPath = getCacheDir().getAbsolutePath()+"/"+System.currentTimeMillis() + ".jpg";
+                    PhotoUtil.autoCrop(this,inputPath,outPath);
+                    File file = new File(outPath);
+                    if (file.exists()) {
+                        result.add(outPath);
+                    }else {
+                        Log.e(TAG, "onClick: 裁剪失败，inputPath="+inputPath);
+                        result.add(inputPath);
+                    }
+
+                }else {
+                    result.add(inputPath);
+                }
+            }
+            Log.d(TAG, "completed: result=" + result.toString());
+            setPhotoResult(result);
+
+        }else {
+
+            if (!mAutoCropEnable) {
+                ArrayList<String> result = PhotoManager.get().getResult();
+                Log.d(TAG, "completed: result=" + result.toString());
+                setPhotoResult(result);
+                return;
+            }
+
+            PhotoManager.get().getCropAllResult(
+                    getBaseContext(),
+                    getBaseContext().getCacheDir().getAbsolutePath(),
+                    new PhotoManager.ResultCallBack() {
+                        @Override
+                        public void callback(ArrayList<String> result) {
+                            hideNoCancelLoading();
+                            setPhotoResult(result);
+                            Log.d(TAG, "callback: result=" + result);
+                        }
+                    });
+
+        }
     }
 
     private void setPhotoResult(ArrayList<String> result){
@@ -336,7 +360,6 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
                 mHorizontalView.delete(item);
             }
         }
-
     }
 
     @Override
@@ -346,8 +369,9 @@ public class PreviewPhotoActivity extends BaseActivity implements View.OnClickLi
             if (resultCode == Activity.RESULT_OK) {
                 Uri cropResultUri = Photo.CropOption.getResult(data);
                 Log.d(TAG, "onActivityResult: cropResultUri="+cropResultUri);
-                PhotoManager.get().getCropPaths().put(mCropSrcPath,cropResultUri.getPath());
+                PhotoManager.get().saveCropImg(mCropSrcPath,cropResultUri.getPath());
                 mPreviewViewPager.notifyDataSetChanged();
+                mHorizontalView.notifyDataSetChanged();
             }
         }
     }

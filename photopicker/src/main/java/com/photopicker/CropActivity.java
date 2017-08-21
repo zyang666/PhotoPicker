@@ -1,13 +1,16 @@
 package com.photopicker;
 
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -38,11 +41,11 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
     private int mCompressQuality = DEFAULT_COMPRESS_QUALITY;
 
     private UCropView mUcropView;
-    private Button mRotate;
-    private Button mCrop;
+    private View mRotate;
+    private View mCrop;
     private GestureCropImageView mCropImageView;
     private OverlayView mOverlayView;
-
+    private Toolbar mToolBar;
 
 
     @Override
@@ -81,11 +84,14 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
     }
 
     private void initView() {
-        mRotate = (Button) findViewById(R.id.rotate);
-        mCrop = (Button) findViewById(R.id.crop);
+        mRotate = findViewById(R.id.rotate);
+        mCrop = findViewById(R.id.crop);
+        findViewById(R.id.cancel).setOnClickListener(this);
+        findViewById(R.id.tool_bar_cancel).setOnClickListener(this);
         mRotate.setOnClickListener(this);
         mCrop.setOnClickListener(this);
 
+        mToolBar = (Toolbar) findViewById(R.id.tool_bar);
         mUcropView = (UCropView) findViewById(R.id.ucropView);
         mCropImageView = mUcropView.getCropImageView();
         mOverlayView = mUcropView.getOverlayView();
@@ -135,10 +141,40 @@ public class CropActivity extends BaseActivity implements View.OnClickListener {
         setResult(RESULT_ERROR, new Intent().putExtra(EXTRA_ERROR, throwable));
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mToolBar.measure(0,0);
+        hideOrShowToolBar(0);
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                hideOrShowToolBar(200);
+            }
+        },300);
+    }
+
+    /**
+     * 动画隐藏或显示标题栏
+     */
+    private void hideOrShowToolBar(long duration){
+        mToolBar.clearAnimation();
+        float translationY = mToolBar.getTranslationY();
+        float start = translationY;
+        float end = translationY < 0 ? 0 :  -mToolBar.getMeasuredHeight();
+        ObjectAnimator animator = ObjectAnimator.ofFloat(mToolBar, "translationY", start,end);
+        animator.setDuration(duration);
+        animator.start();
+    }
+
     @Override
     public void onClick(View v) {
         int id = v.getId();
-        if(id == R.id.rotate){
+        if(id == R.id.cancel || id == R.id.tool_bar_cancel){
+            finish();
+
+        }else if(id == R.id.rotate){
             mCropImageView.postRotate(90);
             mCropImageView.setImageToWrapCropBounds();
 

@@ -201,9 +201,8 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
                 } else {
                     PhotoUtil.showShortToast(getContext(),"没找到对应的图片");
                 }
-            } else {
-//                startPreviewPhotoActivity(position);
 
+            } else {
                 startPreviewPhotoActivity(Photo.MODE_OPTION,mPhotoListView.getRealPos(position));
             }
         }
@@ -319,7 +318,7 @@ public class PhotoListFragment extends BasePhotoListFragment implements View.OnC
                 getActivity().finish();
             }
 
-        }else if(id == R.id.title_container){
+        }else if(id == R.id.title_container){//点击title
             if(mPopupWindow != null) {
                 mPopupWindow.showPopupWindow(mToolbar);
                 mOverrideView.setVisibility(View.VISIBLE);

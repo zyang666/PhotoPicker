@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,7 +59,6 @@ public class HorizontalRecyclerView extends RecyclerView{
         }else {
             mInteriorAdapter.setData(data);
         }
-        mInteriorAdapter.notifyDataSetChanged();
     }
 
     public void delete(Images images){
@@ -69,21 +69,30 @@ public class HorizontalRecyclerView extends RecyclerView{
             List<Images> data = mInteriorAdapter.getData();
             if(data.contains(images)) {
                 data.remove(images);
+                mInteriorAdapter.notifyDataSetChanged();
             }
-            mInteriorAdapter.notifyDataSetChanged();
         }
     }
 
     public void add(Images images){
-        if(mInteriorAdapter != null && mInteriorAdapter.getData() != null){
+        if(images != null && mInteriorAdapter != null && mInteriorAdapter.getData() != null){
             List<Images> data = mInteriorAdapter.getData();
             if(!data.contains(images)) {
                 data.add(images);
+                mInteriorAdapter.notifyDataSetChanged();
+                int currentPos = data.indexOf(images);
+                if(currentPos > 0) {
+                    smoothScrollToPosition(currentPos);
+                }
             }
         }
-        setCurrentImage(images);
     }
 
+    public void notifyDataSetChanged(){
+        if(mInteriorAdapter != null){
+            mInteriorAdapter.notifyDataSetChanged();
+        }
+    }
 
     /**
      * 设置当前选中的图片路径

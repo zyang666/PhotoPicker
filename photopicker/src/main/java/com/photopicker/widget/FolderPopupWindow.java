@@ -58,7 +58,6 @@ public class FolderPopupWindow extends PopupWindow{
         setBackgroundDrawable(new ColorDrawable(Color.WHITE));
 
         initView(inflate);
-//        initData();
         initListener();
     }
 

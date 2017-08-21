@@ -81,8 +81,7 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
 
     protected void loadImgFromFolderName(final String folderName, boolean reload){
         if(reload){//重新加载，则清掉之前已经选择的图片
-            PhotoManager.get().getCropPaths().clear();
-            PhotoManager.get().getSelectedPaths().clear();
+            PhotoManager.get().clearSelectedData();
         }
 
         PhotoManager.get().loadAllImgs(getContext(), reload, new PhotoManager.LoadAllImgCallBack() {
@@ -152,12 +151,17 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
         //nothing
     }
 
-    protected View getBottomView(){
-        return null;
-    }
 
+    /**
+     * 获取toolbar view
+     * @return
+     */
     protected abstract View getToolbar();
 
+    /**
+     * 第一次加载相册列表成功时回调
+     * @param data
+     */
     protected abstract void firstLoadDataSuccess(List<Folder> data);
 
     /**
@@ -165,4 +169,13 @@ public abstract class BasePhotoListFragment extends Fragment implements PhotoLis
      * @return
      */
     protected abstract boolean showBottomLayout();
+
+
+    /**
+     * 获取底部布局view
+     * @return
+     */
+    protected View getBottomView(){
+        return null;
+    }
 }

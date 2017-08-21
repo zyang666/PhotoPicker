@@ -233,6 +233,14 @@ public class PhotoManager implements Handler.Callback {
     }
 
     /**
+     * 清除已选择的集合
+     */
+    public void clearSelectedData(){
+        mSelectedImgs.clear();
+        mSelectedPaths.clear();
+    }
+
+    /**
      * 选择一张图片
      * @param images
      */
@@ -259,24 +267,6 @@ public class PhotoManager implements Handler.Callback {
                 mSelectedPaths.remove(path);
             }
             if(mSelectedImgs.contains(images)) {
-                mSelectedImgs.remove(images);
-            }
-        }
-
-//        cancelSelector(images,true);
-    }
-
-    /**
-     * 取消选择一张图片
-     * @param images
-     */
-    public void cancelSelector(Images images,boolean deleteSelectedImage){
-        if(images != null){
-            String path = images.getImgPath();
-            if(!TextUtils.isEmpty(path) && mSelectedPaths.contains(path)){
-                mSelectedPaths.remove(path);
-            }
-            if(deleteSelectedImage && mSelectedImgs.contains(images)) {
                 mSelectedImgs.remove(images);
             }
         }
@@ -396,6 +386,10 @@ public class PhotoManager implements Handler.Callback {
             mFolders.clear();
             mFolders = null;
         }
+
+        mCropPaths.clear();
+        mSelectedImgs.clear();
+        mSelectedPaths.clear();
     }
 
     public static void release(){

@@ -20,40 +20,42 @@
 
         <LinearLayout
             android:id="@+id/bottom_bar"
-            android:layout_alignParentBottom="true"
-            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:orientation="vertical">
 
             <com.photopicker.widget.HorizontalRecyclerView
                 android:id="@+id/horizontal_view"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:background="#44000000"/>
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:background="#99ffffff"
-                android:paddingLeft="15dp"
-                android:paddingRight="15dp"
+                android:background="#77000000"
                 android:visibility="visible">
 
                 <TextView
                     android:id="@+id/tv_edit"
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_centerVertical="true"
                     android:gravity="center_vertical"
                     android:text="编辑"
                     android:textColor="@android:color/white"/>
 
                 <TextView
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp"
                     android:id="@+id/select_icon"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_alignParentRight="true"
                     android:layout_centerVertical="true"
-                    android:layout_marginRight="5dp"
                     android:drawableLeft="@drawable/bg_image_selector"
                     android:drawablePadding="10dp"
                     android:gravity="center_vertical"
@@ -72,9 +74,9 @@
             android:layout_alignParentTop="true"
             android:background="@color/colorPrimary">
 
-            <FrameLayout
+            <LinearLayout
                 android:id="@+id/cancel"
-                android:layout_width="?attr/actionBarSize"
+                android:layout_width="wrap_content"
                 android:layout_height="?attr/actionBarSize">
 
                 <ImageView
@@ -83,16 +85,17 @@
                     android:layout_gravity="center_vertical"
                     android:scaleType="center"
                     android:src="@drawable/photo_ic_back_up"/>
-            </FrameLayout>
 
-            <TextView
-                android:id="@+id/title"
-                style="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="0/0"
-                android:textColor="@android:color/white"/>
+                <TextView
+                    android:id="@+id/title"
+                    style="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginLeft="10dp"
+                    android:text="0/0"
+                    android:textColor="@android:color/white"/>
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/completed"
