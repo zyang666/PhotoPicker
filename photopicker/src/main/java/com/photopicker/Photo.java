@@ -116,21 +116,11 @@ public class Photo {
         }
 
         /**
-         * 是否需要显示照相机,如果需要照相机的item，请务必调用{@link #setCameraUri(Uri)}设置照相机拍完照保存的相片路径
+         * 是否需要显示照相机
          * @return
          */
         public ListOption needCamera(boolean needCamera){
             mListBundle.putBoolean(EXTRA_NEED_CAMERA,needCamera);
-            return this;
-        }
-
-        /**
-         * 设置相机拍照保存相片的uri
-         * @param saveUri
-         * @return
-         */
-        public ListOption setCameraUri(@NonNull Uri saveUri){
-            mListBundle.putParcelable(EXTRA_CAMERA_URI,saveUri);
             return this;
         }
 
